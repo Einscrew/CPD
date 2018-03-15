@@ -1,25 +1,24 @@
+CC=gcc
 EXTRA=-fopenmp
 FLAGS=-g -Wall
 
 omp-2: omp-2.o
-	gcc -o $@ $^ $(EXTRA)
- #gcc -c omp-2.o omp-2.c -fopenmp
+	$(CC) -o $@ $^ $(EXTRA)
 
 omp-2.o: omp-2.c
-	gcc -c $^ $(FLAGS) $(EXTRA)
- #gcc -c omp-2.c -fopenmp
+	$(CC) -c $^ $(FLAGS) $(EXTRA)
 
 omp-2c: omp-2c.o
-	gcc -o $@ $^ $(EXTRA)
+	$(CC) -o $@ $^ $(EXTRA)
 
 omp-2c.o: omp-2c.c
-	gcc -c $^ $(FLAGS) $(EXTRA)
+	$(CC) -c $^ $(FLAGS) $(EXTRA)
 
 omp-2d: omp-2d.o
-	gcc -o $@ $^ $(EXTRA)
+	$(CC) -o $@ $^ $(EXTRA)
 
 omp-2d.o: omp-2d.c
-	gcc -c $^ $(FLAGS) $(EXTRA)
+	$(CC) -c $^ $(FLAGS) $(EXTRA)
 
 clean:
 	rm -f *.*o omp-2 omp-2c omp-2d
