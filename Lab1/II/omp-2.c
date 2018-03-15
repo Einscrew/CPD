@@ -40,15 +40,16 @@ int main(int argc, char *argv[]) {
   for(iter = 0; iter < NUMITER; iter++) {
 
     /* 2.1. PROCESS ELEMENTS */
+    #pragma omp parallel for
     for(i = 0; i < TOTALSIZE-1; i++) {
       V[i] = f(V[i], V[i+1]);
     }
-    
+
     /* 2.2. END ITERATIONS LOOP */
   }
 
   /* 3. OUTPUT FINAL VALUES */
-  printf("Output:\n"); 
+  printf("Output:\n");
   for(i = 0; i < TOTALSIZE; i++) {
     printf("%4d %f\n", i, V[i]);
   }

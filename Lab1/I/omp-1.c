@@ -24,19 +24,16 @@ int main(int argc, char *argv[]) {
 
 
 /* divide loop iterations evenly by threads */
-#pragma omp for nowait //<------------------------------------------------------
-      for(i = 0; i < NUMITER; i++){
-        printf("Thread: %d\titer=%d\n", tid, i);
-        fflush(stdout);
-      }
-
+#pragma omp for  //<------------------------------------------------------
+      for(i = 0; i < NUMITER; i++)
+        printf("Thread: %d\titer=%d\n", tid, i);fflush(stdout);
       /* one of these messages per thread */
 
 
-#pragma omp barrier //<---------------------------------------------------------
+//#pragma omp barrier //<---------------------------------------------------------
       printf("Thread %d, almost..\n", tid);
       fflush(stdout);
-#pragma omp barrier //<---------------------------------------------------------
+//#pragma omp barrier //<---------------------------------------------------------
       printf("Thread %d, done!\n", tid);
       fflush(stdout);
   }
