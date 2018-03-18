@@ -28,6 +28,9 @@ typedef struct Board{
 
 }Board;
 
+int checkValidity(Cell *aux, int size);
+int checkAllBoard(Board *board);
 void freeBoard(Board *board);
+
 
 #endif
