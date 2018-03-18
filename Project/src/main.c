@@ -8,15 +8,24 @@ int main(int argc, const char* argv[]){
     {
         if((fillGameBoard(board, argv[1])) == 0)
         {
-            //deleteStrategy(board);
-            if(solveSudoku(board) == TRUE)
-                printf("SUDOKU SOLVED!\n");
-            if(checkBoardComplete(board) == TRUE)
-                printf("Valid Sudoku!\n\n");
+            if(checkAllBoard(board) == TRUE)
+            {
+                 //deleteStrategy(board);
+                if(solveSudoku(board) == TRUE)
+                    printf("SUDOKU SOLVED!\n");
+                else
+                    printf("There's no soltuion for the sudoku proposed!\n");
+                if(checkBoardComplete(board) == TRUE)
+                    printf("Valid Sudoku!\n\n");
+                else
+                    printf("Something is wrong!\n");
+                printBoard(board->gameBoard, (board->size * board->size));
+                freeBoard(board); 
+            }
             else
-                printf("Something is wrong!\n");
-            printBoard(board->gameBoard, (board->size * board->size));
-            freeBoard(board); 
+            {
+                printf("Invalid sudoku board, please check the file!\n");
+            }
         }
     }
     else

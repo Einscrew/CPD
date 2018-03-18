@@ -131,6 +131,8 @@ int bruteForceStrategy(Board *board)
     return FALSE;
 }
 
+/* Function that solves a sudoku starting with the humanistic approach (delete approach, etc) and then if it's not solved tries the
+brute force approach */
 int solveSudoku(Board *board)
 {
     deleteStrategy(board);
