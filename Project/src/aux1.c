@@ -119,6 +119,46 @@ int checkBoardComplete(Board *board)
     return TRUE;
 }
 
+/* Finds the cell that has the less number of possibilities */
+int minimumPossibilities(Board *board, MinCell *minPosCell)
+{
+    int i = 0, j = 0, minCount = 0;
+    Cell *minCell = NULL;
+
+    for(i = 0; i < board->size * board->size; i++)
+    {
+        for(j = 0; j < board->size * board->size; j++)
+        {
+            /* The ones that are already filled don't matter */
+            if(board->gameBoard[i][j].value  != 0)
+            {
+                continue;
+            }
+
+            /* Updates the cell with the mininum value of possibilities */
+            if(minCount < board->gameBoard[i][j].countPossibilities || minCell == NULL)
+            {
+                minCell = &(board->gameBoard[i][j]);
+                minPosCell->row = i;
+                minPosCell->col = j;
+            }
+        }
+    }
+
+    if(minCell == NULL)
+    {
+        return FALSE;
+    }
+
+    return TRUE;
+}
+
+/* Makes a copy of the board to use in brute force approach */
+void copyBoard(Board *board, Board *copy)
+{
+    *copy = *board;
+}
+
 void freeBoard(Board *board)
 {
     int i = 0, j = 0;

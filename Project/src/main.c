@@ -8,7 +8,9 @@ int main(int argc, const char* argv[]){
     {
         if((fillGameBoard(board, argv[1])) == 0)
         {
-            deleteStrategy(board);
+            //deleteStrategy(board);
+            if(solveSudoku(board) == TRUE)
+                printf("SUDOKU SOLVED!\n");
             if(checkBoardComplete(board) == TRUE)
                 printf("Valid Sudoku!\n\n");
             else

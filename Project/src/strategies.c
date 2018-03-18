@@ -84,3 +84,69 @@ void deleteStrategy(Board *board)
         }
     }
 }
+
+/* Guesses a value based on the cell with the less possible values and tries to solve the sudoku with that guess.
+If the guess is wrong undo to the previous board and continue seraching. If no solution was found then there isn't
+any solution */
+int bruteForceStrategy(Board *board)
+{
+    int i = 0, try = 0;
+    MinCell minCell;
+    Board copyOfBoard;
+
+    if(minimumPossibilities(board, &minCell) == FALSE)
+    {
+        return FALSE;
+    }
+
+    for(i = 0; i < board->size * board->size; i++)
+    {
+        printf("ENTROU\n");
+        /* Only cares about values that can be a solution */
+        if(board->gameBoard[minCell.row][minCell.col].possibleValues[i] == FALSE)
+        {
+            continue;
+        }
+        else
+        {
+            /* Copies the board that will receive the try number */
+            copyBoard(board, &copyOfBoard);
+            /* The vector of possibilities has 9 positions, so our guess will be the number after the position in this vector */
+            try = i + 1;
+
+            /* Assigns the try number to the copied board and updates the possible values of the other cells in the same row,
+            column or box */
+            copyOfBoard.gameBoard[minCell.row][minCell.col].value = try;
+            updateBoardValues(board, minCell.row, minCell.col, try);
+
+            if(solveSudoku(&copyOfBoard) == TRUE)
+            {
+                /* Then we found the solution and copies it to the final board */
+                copyBoard(&copyOfBoard, board);
+                return TRUE;
+            }
+        }
+    }
+
+    return FALSE;
+}
+
+int solveSudoku(Board *board)
+{
+    deleteStrategy(board);
+
+    if(checkBoardComplete(board) == TRUE)
+    {
+        return TRUE;
+    }
+
+    if(bruteForceStrategy(board) == TRUE)
+    {
+        return TRUE;
+    }
+    else
+    {
+        return FALSE;
+    }
+
+}
