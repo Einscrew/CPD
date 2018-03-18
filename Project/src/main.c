@@ -9,8 +9,10 @@ int main(int argc, const char* argv[]){
         if((fillGameBoard(board, argv[1])) == 0)
         {
             deleteStrategy(board);
-            if(checkAllBoard(board) == TRUE)
+            if(checkBoardComplete(board) == TRUE)
                 printf("Valid Sudoku!\n\n");
+            else
+                printf("Something is wrong!\n");
             printBoard(board->gameBoard, (board->size * board->size));
             freeBoard(board); 
         }

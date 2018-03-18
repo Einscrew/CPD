@@ -30,6 +30,7 @@ typedef struct Board{
 
 int checkValidity(Cell *aux, int size);
 int checkAllBoard(Board *board);
+int checkBoardComplete(Board *board);
 void freeBoard(Board *board);
 
 

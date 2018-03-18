@@ -95,6 +95,29 @@ int checkAllBoard(Board *board)
     return TRUE;
 }
 
+/* Checks if the board is complete and if it's valid */
+int checkBoardComplete(Board *board)
+{
+    int i = 0, j = 0;
+
+    for(i = 0; i < board->size * board->size;, i++)
+    {
+        for(j = 0; j < board->size * board->size; j++)
+        {
+            if(board->gameBoard[i][j].value == 0)
+            {
+                return FALSE;
+            }
+        }
+    }
+
+    if(checkAllBoard(board) == FALSE)
+    {
+        return FALSE;
+    }
+
+    return TRUE;
+}
 
 void freeBoard(Board *board)
 {
