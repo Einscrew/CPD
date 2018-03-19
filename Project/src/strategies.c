@@ -117,7 +117,7 @@ int bruteForceStrategy(Board *board)
             /* Assigns the try number to the copied board and updates the possible values of the other cells in the same row,
             column or box */
             copyOfBoard.gameBoard[minCell.row][minCell.col].value = try;
-            updateBoardValues(board, minCell.row, minCell.col, try);
+            updateBoardValues(&copyOfBoard, minCell.row, minCell.col, try);
 
             if(solveSudoku(&copyOfBoard) == TRUE)
             {
