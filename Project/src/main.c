@@ -14,7 +14,7 @@ int main(int argc, const char* argv[]){
             if(checkAllBoard(board) == TRUE)
             {
                  //deleteStrategy(board);
-                if(solveSudoku(board) == TRUE)
+                if(solveSudoku(board, copyOfBoard) == TRUE)
                     printf("SUDOKU SOLVED!\n");
                 else
                     printf("There's no soltuion for the sudoku proposed!\n");
