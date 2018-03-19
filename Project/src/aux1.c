@@ -205,7 +205,6 @@ void copyBoard(Board *board, Board *copy, int option)
         copy = (Board*)malloc(sizeof(Board));
         copy->size = board->size;
         allocBoard(copy);
-
     }
 
     for(i = 0; i < copy->size * copy->size; i++)
@@ -215,6 +214,10 @@ void copyBoard(Board *board, Board *copy, int option)
             copy->gameBoard[i][j].value = board->gameBoard[i][j].value;
             for(k = 0; k < copy->size * copy->size; k++)
             {
+                if(option == TRUE)
+                {
+                    createVectorPossibilities(&(copy->gameBoard[i][j]), (copy->size*board->size));
+                }
                 copy->gameBoard[i][j].possibleValues[k] = board->gameBoard[i][j].possibleValues[k];
                 copy->gameBoard[i][j].countPossibilities = board->gameBoard[i][j].countPossibilities;
             }
