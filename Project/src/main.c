@@ -8,6 +8,7 @@ int main(int argc, const char* argv[]){
     {
         if((fillGameBoard(board, argv[1])) == 0)
         {
+            /* To guarantee that the board given hasn't already wrong values */
             if(checkAllBoard(board) == TRUE)
             {
                  //deleteStrategy(board);

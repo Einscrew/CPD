@@ -101,7 +101,6 @@ int bruteForceStrategy(Board *board)
 
     for(i = 0; i < board->size * board->size; i++)
     {
-        printf("ENTROU\n");
         /* Only cares about values that can be a solution */
         if(board->gameBoard[minCell.row][minCell.col].possibleValues[i] == FALSE)
         {
