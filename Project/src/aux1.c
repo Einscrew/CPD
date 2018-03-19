@@ -217,7 +217,7 @@ void copyBoard(Board *board, Board *copy, int option)
             {
                 if(option == TRUE)
                 {
-                    createVectorPossibilities(&(copy->gameBoard[i][j]), (copy->size*board->size));
+                    createVectorPossibilities(&(copy->gameBoard[i][j]), (copy->size*copy->size));
                 }
                 if(copy->gameBoard[i][j].value == 0)
                 {
