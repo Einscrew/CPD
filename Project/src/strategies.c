@@ -94,7 +94,7 @@ int bruteForceStrategy(Board *board)
     MinCell minCell;
     Board *copyOfBoard = NULL;
 
-    copyBoard(board, copyOfBoard, FALSE);
+    copyBoard(board, copyOfBoard, TRUE);
 
     if(minimumPossibilities(board, &minCell) == FALSE)
     {
