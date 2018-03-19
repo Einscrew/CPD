@@ -5,6 +5,48 @@
     
 }*/
 
+/* Allocates memory to the game board */
+int allocBoard(Board *board)
+{
+    int j = 0;
+
+    board->gameBoard = (Cell**)malloc(board->size*board->size*sizeof(Cell*));
+
+    if(board->gameBoard == NULL)
+    {
+        printf("Error on malloc!\n");
+        return -1;
+    }
+    for(j = 0; j < board->size * board->size; j++)
+    {
+        board->gameBoard[j] = (Cell*)malloc(board->size*board->size*sizeof(Cell));
+        board->gameBoard[j]->possibleValues = NULL;
+        if(board->gameBoard[j] == NULL)
+        {
+            printf("Error on malloc!\n");
+            return -1;
+        }
+    }
+    return 0;
+}
+
+/* Creates a vector of possibilities for each cell that has a value != 0 */
+void createVectorPossibilities(Cell *aux, int size)
+{
+    int i = 0;
+    aux->possibleValues = (int*)malloc(size*sizeof(int));
+
+    if(aux->possibleValues == NULL)
+    {
+        printf("Error on malloc!\n");
+        exit(-1);
+    }
+    /* Initializes the vector of possibilities of each empty cell with all possible values */
+    for(i = 0; i < size; i++)
+    {
+        aux->possibleValues[i] = TRUE;
+    }
+}
 
 /* Checks each row, column or box */
 int checkValidity(Cell *aux, int size)
@@ -154,9 +196,30 @@ int minimumPossibilities(Board *board, MinCell *minPosCell)
 }
 
 /* Makes a copy of the board to use in brute force approach */
-void copyBoard(Board *board, Board *copy)
+void copyBoard(Board *board, Board *copy, int option)
 {
-    *copy = *board;
+    int i = 0, j = 0, k = 0;
+
+    if(option == TRUE)
+    {
+        copy = (Board*)malloc(sizeof(Board));
+        copy->size = board->size;
+        allocBoard(copy);
+
+    }
+
+    for(i = 0; i < copy->size * copy->size; i++)
+    {
+        for(j = 0; j < copy->size; j++)
+        {
+            copy->gameBoard[i][j].value = board->gameBoard[i][j].value;
+            for(k = 0; k < copy->size * copy->size; k++)
+            {
+                copy->gameBoard[i][j].possibleValues[k] = board->gameBoard[i][j].possibleValues[k];
+                copy->gameBoard[i][j].countPossibilities = board->gameBoard[i][j].countPossibilities;
+            }
+        }
+    }
 }
 
 void freeBoard(Board *board)

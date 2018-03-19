@@ -34,11 +34,13 @@ typedef struct Board{
 
 }Board;
 
+int allocBoard(Board *board);
+void createVectorPossibilities(Cell *aux, int size);
 int checkValidity(Cell *aux, int size);
 int checkAllBoard(Board *board);
 int checkBoardComplete(Board *board);
 int minimumPossibilities(Board *board, MinCell *minPosCell);
-void copyBoard(Board *board, Board *copy);
+void copyBoard(Board *board, Board *copy, int option);
 void freeBoard(Board *board);
 
 

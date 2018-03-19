@@ -92,10 +92,14 @@ int bruteForceStrategy(Board *board)
 {
     int i = 0, try = 0;
     MinCell minCell;
-    Board copyOfBoard;
+    Board *copyOfBoard = NULL;
+
+    copyBoard(board, copyOfBoard, FALSE);
 
     if(minimumPossibilities(board, &minCell) == FALSE)
     {
+        freeBoard(copyOfBoard);
+        free(copyOfBoard);
         return FALSE;
     }
 
@@ -109,23 +113,30 @@ int bruteForceStrategy(Board *board)
         else
         {
             /* Copies the board that will receive the try number */
-            copyBoard(board, &copyOfBoard);
+            copyBoard(board, copyOfBoard, FALSE);
+
             /* The vector of possibilities has 9 positions, so our guess will be the number after the position in this vector */
             try = i + 1;
 
             /* Assigns the try number to the copied board and updates the possible values of the other cells in the same row,
             column or box */
-            copyOfBoard.gameBoard[minCell.row][minCell.col].value = try;
-            updateBoardValues(&copyOfBoard, minCell.row, minCell.col, try);
+            copyOfBoard->gameBoard[minCell.row][minCell.col].value = try;
+            updateBoardValues(copyOfBoard, minCell.row, minCell.col, try);
 
-            if(solveSudoku(&copyOfBoard) == TRUE)
+            if(solveSudoku(copyOfBoard) == TRUE)
             {
                 /* Then we found the solution and copies it to the final board */
-                copyBoard(&copyOfBoard, board);
+                copyBoard(copyOfBoard, board, FALSE);
+                freeBoard(copyOfBoard);
+                free(copyOfBoard);
                 return TRUE;
+                
             }
         }
     }
+
+    freeBoard(copyOfBoard);
+    free(copyOfBoard);
 
     return FALSE;
 }
@@ -134,12 +145,12 @@ int bruteForceStrategy(Board *board)
 brute force approach */
 int solveSudoku(Board *board)
 {
-    deleteStrategy(board);
+    /*deleteStrategy(board);
 
     if(checkBoardComplete(board) == TRUE)
     {
         return TRUE;
-    }
+    }*/
 
     if(bruteForceStrategy(board) == TRUE)
     {

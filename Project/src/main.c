@@ -20,6 +20,7 @@ int main(int argc, const char* argv[]){
                     printf("Valid Sudoku!\n\n");
                 else
                     printf("Something is wrong!\n");
+            
                 printBoard(board->gameBoard, (board->size * board->size));
                 freeBoard(board); 
             }
