@@ -209,23 +209,24 @@ void copyBoard(Board *board, Board *copy, int option)
 
     for(i = 0; i < copy->size * copy->size; i++)
     {
-        for(j = 0; j < copy->size; j++)
+        for(j = 0; j < copy->size * copy->size; j++)
         {
             copy->gameBoard[i][j].value = board->gameBoard[i][j].value;
             
-            if(option == TRUE && copy->gameBoard[i][j].value == 0)
-            {
-                createVectorPossibilities(&(copy->gameBoard[i][j]), (copy->size*board->size));
-            }
-
             if(copy->gameBoard[i][j].value == 0)
             {
-                for(k = 0; k < copy->size * copy->size; k++)
+                if(option == TRUE)
                 {
-                    copy->gameBoard[i][j].possibleValues[k] = board->gameBoard[i][j].possibleValues[k];
+                    createVectorPossibilities(&(copy->gameBoard[i][j]), (copy->size*board->size));
+                }
+                if(copy->gameBoard[i][j].value == 0)
+                {
+                    for(k = 0; k < copy->size * copy->size; k++)
+                    {
+                        copy->gameBoard[i][j].possibleValues[k] = board->gameBoard[i][j].possibleValues[k];
+                    }
                 }
             }
-            
             copy->gameBoard[i][j].countPossibilities = board->gameBoard[i][j].countPossibilities;
         }
     }
