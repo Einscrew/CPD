@@ -3,6 +3,8 @@
 int main(int argc, const char* argv[]){
 
     Board *board = (Board*)malloc(sizeof(Board));
+    Board *copyOfBoard = NULL;
+    copyBoard(board, copyOfBoard, TRUE);
   
     if(argv[1] != NULL)
     {
@@ -22,6 +24,7 @@ int main(int argc, const char* argv[]){
                     printf("Something is wrong!\n");
             
                 printBoard(board->gameBoard, (board->size * board->size));
+                freeBoard(copyOfBoard);
                 freeBoard(board); 
             }
             else
@@ -35,6 +38,7 @@ int main(int argc, const char* argv[]){
         printf("No file was specified!\n");
     }
 
+    free(copyOfBoard);
     free(board);
 
     return 0;

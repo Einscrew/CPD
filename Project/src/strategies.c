@@ -88,18 +88,13 @@ void deleteStrategy(Board *board)
 /* Guesses a value based on the cell with the less possible values and tries to solve the sudoku with that guess.
 If the guess is wrong undo to the previous board and continue seraching. If no solution was found then there isn't
 any solution */
-int bruteForceStrategy(Board *board)
+int bruteForceStrategy(Board *board, Board *copy)
 {
     int i = 0, try = 0;
     MinCell minCell;
-    Board *copyOfBoard = NULL;
-
-    copyBoard(board, copyOfBoard, TRUE);
 
     if(minimumPossibilities(board, &minCell) == FALSE)
     {
-        freeBoard(copyOfBoard);
-        free(copyOfBoard);
         return FALSE;
     }
 
@@ -113,37 +108,32 @@ int bruteForceStrategy(Board *board)
         else
         {
             /* Copies the board that will receive the try number */
-            copyBoard(board, copyOfBoard, FALSE);
+            copyBoard(board, copy, FALSE);
 
             /* The vector of possibilities has 9 positions, so our guess will be the number after the position in this vector */
             try = i + 1;
 
             /* Assigns the try number to the copied board and updates the possible values of the other cells in the same row,
             column or box */
-            copyOfBoard->gameBoard[minCell.row][minCell.col].value = try;
-            updateBoardValues(copyOfBoard, minCell.row, minCell.col, try);
+            copy->gameBoard[minCell.row][minCell.col].value = try;
+            updateBoardValues(copy, minCell.row, minCell.col, try);
 
-            if(solveSudoku(copyOfBoard) == TRUE)
+            if(solveSudoku(board, copy) == TRUE)
             {
                 /* Then we found the solution and copies it to the final board */
-                copyBoard(copyOfBoard, board, FALSE);
-                freeBoard(copyOfBoard);
-                free(copyOfBoard);
+                copyBoard(copy, board, FALSE);
                 return TRUE;
                 
             }
         }
     }
 
-    freeBoard(copyOfBoard);
-    free(copyOfBoard);
-
     return FALSE;
 }
 
 /* Function that solves a sudoku starting with the humanistic approach (delete approach, etc) and then if it's not solved tries the
 brute force approach */
-int solveSudoku(Board *board)
+int solveSudoku(Board *board, Board *copy)
 {
     /*deleteStrategy(board);
 
@@ -152,7 +142,7 @@ int solveSudoku(Board *board)
         return TRUE;
     }*/
 
-    if(bruteForceStrategy(board) == TRUE)
+    if(bruteForceStrategy(board, copy) == TRUE)
     {
         return TRUE;
     }
