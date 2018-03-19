@@ -3,7 +3,7 @@
 int main(int argc, const char* argv[]){
 
     Board *board = (Board*)malloc(sizeof(Board));
-    Board *copyOfBoard = (Board*)malloc(sizeof(Board));
+    //Board *copyOfBoard = (Board*)malloc(sizeof(Board));
     
     if(argv[1] != NULL)
     {
@@ -12,7 +12,7 @@ int main(int argc, const char* argv[]){
             /* To guarantee that the board given hasn't already wrong values */
             if(checkAllBoard(board) == TRUE)
             {
-                copyBoard(board, copyOfBoard, TRUE);
+                //copyBoard(board, copyOfBoard, TRUE);
                  //deleteStrategy(board);
                 if(solveSudoku(board, copyOfBoard) == TRUE)
                     printf("SUDOKU SOLVED!\n");
@@ -38,7 +38,7 @@ int main(int argc, const char* argv[]){
         printf("No file was specified!\n");
     }
 
-    free(copyOfBoard);
+    //free(copyOfBoard);
     free(board);
 
     return 0;

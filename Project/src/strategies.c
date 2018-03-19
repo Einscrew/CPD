@@ -99,7 +99,7 @@ int bruteForceStrategy(Board *board, Board *copy)
     int i = 0, try = 0;
     MinCell minCell;
 
-    if(minimumPossibilities(copy, &minCell) == FALSE)
+    if(minimumPossibilities(board, &minCell) == FALSE)
     {
         return FALSE;
     }
@@ -107,7 +107,7 @@ int bruteForceStrategy(Board *board, Board *copy)
     for(i = 0; i < board->size * board->size; i++)
     {
         /* Only cares about values that can be a solution */
-        if(copy->gameBoard[minCell.row][minCell.col].possibleValues[i] == FALSE)
+        if(board->gameBoard[minCell.row][minCell.col].possibleValues[i] == FALSE)
         {
             continue;
         }

@@ -218,12 +218,10 @@ void copyBoard(Board *board, Board *copy, int option)
                 {
                     createVectorPossibilities(&(copy->gameBoard[i][j]), (copy->size*copy->size));
                 }
-                if(copy->gameBoard[i][j].value == 0)
+                
+                for(k = 0; k < copy->size * copy->size; k++)
                 {
-                    for(k = 0; k < copy->size * copy->size; k++)
-                    {
-                        copy->gameBoard[i][j].possibleValues[k] = board->gameBoard[i][j].possibleValues[k];
-                    }
+                    copy->gameBoard[i][j].possibleValues[k] = board->gameBoard[i][j].possibleValues[k];
                 }
             }
             copy->gameBoard[i][j].countPossibilities = board->gameBoard[i][j].countPossibilities;
