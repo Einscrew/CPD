@@ -2,7 +2,7 @@ CC=gcc
 EXTRA=-fopenmp
 FLAGS=-g -Wall
 
-sudo: main.o game.o strategies.o aux1.o
+sudoku: main.o game.o strategies.o aux1.o
 	$(CC) -o $@ $^ $(EXTRA)
 
 main.o: main.c game.h aux1.h strategies.h
@@ -18,4 +18,4 @@ aux1.o: aux1.c aux1.h
 	$(CC) -c $^ $(FLAGS) $(EXTRA)
 
 clean:
-	rm -f *.*o sudo
+	rm -f *.*o sudoku
