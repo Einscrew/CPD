@@ -18,7 +18,7 @@ void updateBoardValues(Board *board, int row, int col, int value)
         board->gameBoard[row][col].countPossibilities--;
         board->gameBoard[row][col].possibleValues[indexValue] = FALSE;
     }
-    
+
     for(i = 0; i < (board->size*board->size); i++)
     {
         /* Update cells in the same row, if the cell is empty */
@@ -40,7 +40,7 @@ void updateBoardValues(Board *board, int row, int col, int value)
                 board->gameBoard[i][col].countPossibilities --;
             }
         }
-        
+
         /* Update cells in the same box, if the cell is empty */
         if(board->gameBoard[boxStartRow + i / board->size][boxStartCol + i % board->size].value == 0)
         {
@@ -53,7 +53,7 @@ void updateBoardValues(Board *board, int row, int col, int value)
     }
 }
 
-/* Checks if a value it's the only possible solution */ 
+/* Checks if a value it's the only possible solution */
 void deleteStrategy(Board *board)
 {
     int changed = 0, row = 0, col = 0, i = 0;
@@ -122,7 +122,7 @@ int bruteForceStrategy(Board *board, Board *copy)
             /* Assigns the try number to the copied board and updates the possible values of the other cells in the same row,
             column or box */
 
-            copy->gameBoard[minCell.row][minCell.col].value = try;       
+            copy->gameBoard[minCell.row][minCell.col].value = try;
             updateBoardValues(copy, minCell.row, minCell.col, try);
             /*printBoard(copy->gameBoard, copy->size * copy->size);
             printf("\n");*/
@@ -132,13 +132,46 @@ int bruteForceStrategy(Board *board, Board *copy)
                 /* Then we found the solution and copies it to the final board */
                 copyBoard(copy, board, FALSE);
                 return TRUE;
-                
+
             }
         }
     }
 
     return FALSE;
 }
+
+int solve(Board * b){
+  int i, j, k, prev;
+
+  for (i = 0; i < count; i++) {
+    for (j = 0; j < count; j++) {
+
+      if (b->gameBoard[i][j].value == 0 ) {
+        for (k = 0; k < count; k++) {
+          if (b->gameBoard[i][j].possibleValues[k] == TRUE){
+            prev = b->gameBoard[i][j].value;
+            b->gameBoard[i][j].value = k+1;
+          }
+
+          if(checkAllBoard(b) == FALSE){
+            //remover das possibilidades o valor corrente
+            b->gameBoard[i][j].possibleValues[k] = FALSE;
+            b->gameBoard[i][j].countPossibilities--;
+
+            //retornar ao valor anterior
+            b->gameBoard[i][j].value = prev;
+          }
+
+        }
+        
+
+      }
+    }
+  }
+
+}
+
+
 
 /* Function that solves a sudoku starting with the humanistic approach (delete approach, etc) and then if it's not solved tries the
 brute force approach */
@@ -151,7 +184,7 @@ int solveSudoku(Board *board, Board *copy)
         return TRUE;
     }*/
 
-    if(bruteForceStrategy(board, copy) == TRUE)
+    if(solve(board, copy) == TRUE)
     {
         return TRUE;
     }
