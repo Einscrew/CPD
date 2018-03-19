@@ -202,7 +202,6 @@ void copyBoard(Board *board, Board *copy, int option)
 
     if(option == TRUE)
     {
-        copy = (Board*)malloc(sizeof(Board));
         copy->size = board->size;
         allocBoard(copy);            
     }

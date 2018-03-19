@@ -3,7 +3,8 @@
 int main(int argc, const char* argv[]){
 
     Board *board = (Board*)malloc(sizeof(Board));
-    Board *copyOfBoard = NULL;
+    Board *copyOfBoard = (Board*)malloc(sizeof(Board));
+    
     copyBoard(board, copyOfBoard, TRUE);
   
     if(argv[1] != NULL)
