@@ -8,6 +8,6 @@
 #include "strategies.h"
 
 int fillGameBoard(Board *board, char const* file);
-void printBoard(Cell **board, int size);
+
 
 #endif

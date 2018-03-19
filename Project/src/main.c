@@ -5,8 +5,6 @@ int main(int argc, const char* argv[]){
     Board *board = (Board*)malloc(sizeof(Board));
     Board *copyOfBoard = (Board*)malloc(sizeof(Board));
     
-    copyBoard(board, copyOfBoard, TRUE);
-  
     if(argv[1] != NULL)
     {
         if((fillGameBoard(board, argv[1])) == 0)
@@ -14,6 +12,7 @@ int main(int argc, const char* argv[]){
             /* To guarantee that the board given hasn't already wrong values */
             if(checkAllBoard(board) == TRUE)
             {
+                copyBoard(board, copyOfBoard, TRUE);
                  //deleteStrategy(board);
                 if(solveSudoku(board, copyOfBoard) == TRUE)
                     printf("SUDOKU SOLVED!\n");

@@ -10,7 +10,7 @@ int allocBoard(Board *board)
 {
     int j = 0;
 
-    board->gameBoard = (Cell**)malloc(board->size*board->size*sizeof(Cell*));
+    board->gameBoard = (Cell**)malloc((board->size*board->size)*sizeof(Cell*));
 
     if(board->gameBoard == NULL)
     {
@@ -19,7 +19,7 @@ int allocBoard(Board *board)
     }
     for(j = 0; j < board->size * board->size; j++)
     {
-        board->gameBoard[j] = (Cell*)malloc(board->size*board->size*sizeof(Cell));
+        board->gameBoard[j] = (Cell*)malloc((board->size*board->size)*sizeof(Cell));
         board->gameBoard[j]->possibleValues = NULL;
         if(board->gameBoard[j] == NULL)
         {
@@ -228,6 +228,21 @@ void copyBoard(Board *board, Board *copy, int option)
             }
             copy->gameBoard[i][j].countPossibilities = board->gameBoard[i][j].countPossibilities;
         }
+    }
+}
+
+/* Prints the game board */
+void printBoard(Cell **board, int size)
+{
+    int i = 0, j = 0;
+
+    for(i = 0; i < size; i++)
+    {
+        for(j = 0; j < size; j++)
+        {
+            printf("%d ", board[i][j].value);
+        }
+        printf("\n");
     }
 }
 

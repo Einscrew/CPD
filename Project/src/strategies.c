@@ -13,6 +13,12 @@ void updateBoardValues(Board *board, int row, int col, int value)
         return;
     }
 
+    if(board->gameBoard[row][col].possibleValues != NULL)
+    {
+        board->gameBoard[row][col].countPossibilities--;
+        board->gameBoard[row][col].possibleValues[indexValue] = FALSE;
+    }
+    
     for(i = 0; i < (board->size*board->size); i++)
     {
         /* Update cells in the same row, if the cell is empty */
@@ -101,7 +107,7 @@ int bruteForceStrategy(Board *board, Board *copy)
     for(i = 0; i < board->size * board->size; i++)
     {
         /* Only cares about values that can be a solution */
-        if(board->gameBoard[minCell.row][minCell.col].possibleValues[i] == FALSE)
+        if(copy->gameBoard[minCell.row][minCell.col].possibleValues[i] == FALSE)
         {
             continue;
         }
@@ -115,8 +121,11 @@ int bruteForceStrategy(Board *board, Board *copy)
 
             /* Assigns the try number to the copied board and updates the possible values of the other cells in the same row,
             column or box */
-            copy->gameBoard[minCell.row][minCell.col].value = try;
+
+            copy->gameBoard[minCell.row][minCell.col].value = try;       
             updateBoardValues(copy, minCell.row, minCell.col, try);
+            /*printBoard(copy->gameBoard, copy->size * copy->size);
+            printf("\n");*/
 
             if(solveSudoku(board, copy) == TRUE)
             {

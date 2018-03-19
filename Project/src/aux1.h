@@ -41,6 +41,7 @@ int checkAllBoard(Board *board);
 int checkBoardComplete(Board *board);
 int minimumPossibilities(Board *board, MinCell *minPosCell);
 void copyBoard(Board *board, Board *copy, int option);
+void printBoard(Cell **board, int size);
 void freeBoard(Board *board);
 
 

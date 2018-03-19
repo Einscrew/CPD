@@ -96,18 +96,5 @@ int fillGameBoard(Board *board, char const* file)
     return 0;
 }
 
-/* Prints the game board */
-void printBoard(Cell **board, int size)
-{
-    int i = 0, j = 0;
 
-    for(i = 0; i < size; i++)
-    {
-        for(j = 0; j < size; j++)
-        {
-            printf("%d ", board[i][j].value);
-        }
-        printf("\n");
-    }
-}
 
