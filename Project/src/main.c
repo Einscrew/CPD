@@ -3,7 +3,6 @@
 int main(int argc, const char* argv[]){
 
     Board *board = (Board*)malloc(sizeof(Board));
-    //Board *copyOfBoard = (Board*)malloc(sizeof(Board));
     
     if(argv[1] != NULL)
     {
@@ -14,7 +13,7 @@ int main(int argc, const char* argv[]){
             {
                 //copyBoard(board, copyOfBoard, TRUE);
                  //deleteStrategy(board);
-                if(solveSudoku(board, copyOfBoard) == TRUE)
+                if(solveSudoku(board) == TRUE)
                     printf("SUDOKU SOLVED!\n");
                 else
                     printf("There's no soltuion for the sudoku proposed!\n");
@@ -24,7 +23,6 @@ int main(int argc, const char* argv[]){
                     printf("Something is wrong!\n");
             
                 printBoard(board->gameBoard, (board->size * board->size));
-                freeBoard(copyOfBoard);
                 freeBoard(board); 
             }
             else
@@ -38,7 +36,6 @@ int main(int argc, const char* argv[]){
         printf("No file was specified!\n");
     }
 
-    //free(copyOfBoard);
     free(board);
 
     return 0;

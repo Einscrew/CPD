@@ -94,10 +94,10 @@ void deleteStrategy(Board *board)
 /* Guesses a value based on the cell with the less possible values and tries to solve the sudoku with that guess.
 If the guess is wrong undo to the previous board and continue seraching. If no solution was found then there isn't
 any solution */
-int bruteForceStrategy(Board *board, Board *copy)
+/*int bruteForceStrategy(Board *board)
 {
     int i = 0, try = 0;
-    MinCell minCell;
+    CellCoord minCell;
 
     if(minimumPossibilities(board, &minCell) == FALSE)
     {
@@ -106,30 +106,27 @@ int bruteForceStrategy(Board *board, Board *copy)
 
     for(i = 0; i < board->size * board->size; i++)
     {
-        /* Only cares about values that can be a solution */
+        
         if(board->gameBoard[minCell.row][minCell.col].possibleValues[i] == FALSE)
         {
             continue;
         }
         else
         {
-            /* Copies the board that will receive the try number */
+           
             copyBoard(board, copy, FALSE);
 
-            /* The vector of possibilities has 9 positions, so our guess will be the number after the position in this vector */
             try = i + 1;
 
-            /* Assigns the try number to the copied board and updates the possible values of the other cells in the same row,
-            column or box */
+           
 
             copy->gameBoard[minCell.row][minCell.col].value = try;
             updateBoardValues(copy, minCell.row, minCell.col, try);
-            /*printBoard(copy->gameBoard, copy->size * copy->size);
-            printf("\n");*/
+           
 
-            if(solveSudoku(board, copy) == TRUE)
+            if(solveSudoku(board) == TRUE)
             {
-                /* Then we found the solution and copies it to the final board */
+           
                 copyBoard(copy, board, FALSE);
                 return TRUE;
 
@@ -138,59 +135,96 @@ int bruteForceStrategy(Board *board, Board *copy)
     }
 
     return FALSE;
-}
+}*/
 
 int solve(Board * b){
   int i, j, k, prev;
+  Coord cell;
 
-  for (i = 0; i < count; i++) {
-    for (j = 0; j < count; j++) {
+    for (i = 0; i < b->size; i++) {
+        for (j = 0; j < b->size; j++) {
+            if (b->gameBoard[i][j].value == 0) {
+                for (k = 0; k < b->size; k++) {
+                    /* When the value is zero and has no more possibilities left */
+                    if(b->gameBoard[i][j].countPossibilities == 0)
+                    {
+                        return FALSE;
+                    }
 
-      if (b->gameBoard[i][j].value == 0 ) {
-        for (k = 0; k < count; k++) {
-          if (b->gameBoard[i][j].possibleValues[k] == TRUE){
-            prev = b->gameBoard[i][j].value;
-            b->gameBoard[i][j].value = k+1;
-          }
+                    if (b->gameBoard[i][j].possibleValues[k] == TRUE){
+                        prev = b->gameBoard[i][j].value;
+                        b->gameBoard[i][j].value = k+1;
+                        /* Means that it's the first time that we going to try a number and 
+                        there's only one possibilitie for this cell */
+                        if(prev == 0 && b->gameBoard[i][j].countPossibilities == 1)
+                        {
+                            updateBoardValues(b, i, j, b->gameBoard[i][j].value);
+                        }
+                    }
 
-          if(checkAllBoard(b) == FALSE){
-            //remover das possibilidades o valor corrente
-            b->gameBoard[i][j].possibleValues[k] = FALSE;
-            b->gameBoard[i][j].countPossibilities--;
+                    /* Checks if the guess is a possible choice in each row, column and box */
+                    if(checkAllBoard(b, &cell) == FALSE){
+                        /* If it's impossible, remove the value from the possibilities and decreases the number of possibilities */
+                        b->gameBoard[i][j].possibleValues[k] = FALSE;
+                        b->gameBoard[i][j].countPossibilities--;
 
-            //retornar ao valor anterior
-            b->gameBoard[i][j].value = prev;
-          }
+                        if(b->gameBoard[i][j].countPossibilities == 0)
+                        {
+                            updateBoardValues(b, i, j, b->gameBoard[i][j].value);
+                        }
+                        //retornar ao valor anterior ?? PODE VOLTAR A ZERO SIMPLESMENTE ??
+                        b->gameBoard[i][j].value = prev;
+                        //b->gameBoard[i][j].value = 0;
 
+                        /* Going back to the last element set in game board */
+                        if(k == b->size)
+                        {
+                            while(b->gameBoard[i][j].value != 0){
+                            
+                                if(j == 0)
+                                {
+                                    i--;   
+                                }
+                                else if(i == 0){
+                                    break;
+                                }
+                                else{
+                                    i--;
+                                }
+                            }
+                        }
+
+                    }
+                    else{
+                        break;
+                    }
+
+                }
+            }
         }
-        
-
-      }
     }
-  }
-
 }
 
 
 
 /* Function that solves a sudoku starting with the humanistic approach (delete approach, etc) and then if it's not solved tries the
 brute force approach */
-int solveSudoku(Board *board, Board *copy)
+int solveSudoku(Board *board)
 {
-    /*deleteStrategy(board);
+    deleteStrategy(board);
 
     if(checkBoardComplete(board) == TRUE)
     {
         return TRUE;
-    }*/
+    }
 
-    if(solve(board, copy) == TRUE)
+    /*if(solve(board) == TRUE)
     {
         return TRUE;
     }
     else
     {
         return FALSE;
-    }
+    }*/
 
 }

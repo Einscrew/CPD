@@ -5,7 +5,8 @@
 
 void updateBoardValues(Board *board, int row, int col, int value);
 void deleteStrategy(Board *board);
-int bruteForceStrategy(Board *board, Board *copy);
-int solveSudoku(Board *board, Board *copy);
+//int bruteForceStrategy(Board *board);
+int solve(Board * b);
+int solveSudoku(Board *board);
 
 #endif

@@ -49,9 +49,9 @@ void createVectorPossibilities(Cell *aux, int size)
 }
 
 /* Checks each row, column or box */
-int checkValidity(Cell *aux, int size)
+int checkValidity(Cell *aux, int size, int *value)
 {
-    int exist[size];
+    int exist[size]; /* Vector that keeps track of what elements already exist in a row, column or box */
     int i = 0;
 
     for(i = 0; i < size; i++)
@@ -66,20 +66,24 @@ int checkValidity(Cell *aux, int size)
             continue;
         }
         
+        /* If already exists there's a conflict */
         if(exist[aux[i].value - 1] == TRUE)
         {
+            value = aux[i].value - 1;
             return FALSE;
         }
+        /* Otherwise assigns true to that position */
         exist[aux[i].value - 1] = TRUE;
     }
     return TRUE;
 }
 
 /* Checks if there aren't any duplicate values in each row, column or box */
-int checkAllBoard(Board *board)
+int checkAllBoard(Board *board, Coord *cell)
 {
     int i = 0, k = 0, w = 0, z = 0;
     int aux1 = 0, aux2 = 0;
+    int value = 0;
 
     /* Used to compare */
     Cell rows[board->size*board->size];
@@ -100,14 +104,39 @@ int checkAllBoard(Board *board)
             for(z = aux1; z < board->size + aux1; z++)
             {
                 boxes[w] = board->gameBoard[k][z];
-                w++;
-            }
-        }
+                w++;                
+            }     
+        }      
         aux1 = aux1 + board->size; /* Increments z so that the box end at the right corner up cell */
         
         /* Check duplicates inside a box */ 
-        if(checkValidity(boxes, board->size*board->size) == FALSE)
+        if(checkValidity(boxes, board->size*board->size, &value) == FALSE)
         {
+            if(i < board->size)
+            {
+                if(value < board->size)
+                {
+                    cell->row = i;
+                    cell->col = value;
+                }
+                else if(value > 3 && value < board->size * 2)
+                {
+                    cell->row = i + 1;
+                    cell->col = value - board->size;
+                }
+                else
+                {
+                    cell->row = i + 2;
+                    cell->col = value - 2 * board->size;
+                    
+                }
+                
+            }
+            else if(i >board->size && i < 2 * board->size)
+                
+                
+                
+            }
             return FALSE;
         }
 
@@ -117,8 +146,10 @@ int checkAllBoard(Board *board)
             cols[w] = board->gameBoard[w][i];
         }
 
-        if(checkValidity(cols, board->size*board->size) == FALSE)
+        if(checkValidity(cols, board->size*board->size, &value) == FALSE)
         {
+            cell->row = value;
+            cell->col = i;
             return FALSE;
         }
 
@@ -129,8 +160,10 @@ int checkAllBoard(Board *board)
             //printf("rows[%d]: %d\n", j, board->gameBoard[i][j].value);
         }
 
-        if(checkValidity(rows, board->size*board->size) == FALSE)
+        if(checkValidity(rows, board->size*board->size, &value) == FALSE)
         {
+            cell->row = i;
+            cell->col = value;
             return FALSE;
         }
     }
@@ -141,6 +174,7 @@ int checkAllBoard(Board *board)
 int checkBoardComplete(Board *board)
 {
     int i = 0, j = 0;
+    Coord cell;
 
     for(i = 0; i < board->size * board->size; i++)
     {
@@ -153,7 +187,7 @@ int checkBoardComplete(Board *board)
         }
     }
 
-    if(checkAllBoard(board) == FALSE)
+    if(checkAllBoard(board, &cell) == FALSE)
     {
         return FALSE;
     }
@@ -162,7 +196,7 @@ int checkBoardComplete(Board *board)
 }
 
 /* Finds the cell that has the less number of possibilities */
-int minimumPossibilities(Board *board, MinCell *minPosCell)
+/*int minimumPossibilities(Board *board, MinCell *minPosCell)
 {
     int i = 0, j = 0, minCount = 0;
     Cell *minCell = NULL;
@@ -170,15 +204,15 @@ int minimumPossibilities(Board *board, MinCell *minPosCell)
     for(i = 0; i < board->size * board->size; i++)
     {
         for(j = 0; j < board->size * board->size; j++)
-        {
+        {*/
             /* The ones that are already filled don't matter */
-            if(board->gameBoard[i][j].value  != 0)
+           /* if(board->gameBoard[i][j].value  != 0)
             {
                 continue;
-            }
+            }*/
 
             /* Updates the cell with the mininum value of possibilities */
-            if(minCount < board->gameBoard[i][j].countPossibilities || minCell == NULL)
+            /*if(minCount < board->gameBoard[i][j].countPossibilities || minCell == NULL)
             {
                 minCell = &(board->gameBoard[i][j]);
                 minPosCell->row = i;
@@ -193,7 +227,7 @@ int minimumPossibilities(Board *board, MinCell *minPosCell)
     }
 
     return TRUE;
-}
+}*/
 
 /* Makes a copy of the board to use in brute force approach */
 void copyBoard(Board *board, Board *copy, int option)

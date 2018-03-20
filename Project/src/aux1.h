@@ -12,12 +12,12 @@
 #define TRUE 1
 #define FALSE 0
 
-typedef struct MinCell{
+typedef struct Coord{
 
     int row;
     int col;
 
-}MinCell;
+}Coord;
 
 typedef struct Cell{
 
@@ -36,11 +36,11 @@ typedef struct Board{
 
 int allocBoard(Board *board);
 void createVectorPossibilities(Cell *aux, int size);
-int checkValidity(Cell *aux, int size);
-int checkAllBoard(Board *board);
+int checkValidity(Cell *aux, int size, int *value);
+int checkAllBoard(Board *board, Coord *cell);
 int checkBoardComplete(Board *board);
-int minimumPossibilities(Board *board, MinCell *minPosCell);
-void copyBoard(Board *board, Board *copy, int option);
+//int minimumPossibilities(Board *board, MinCell *minPosCell);
+//void copyBoard(Board *board, Board *copy, int option);
 void printBoard(Cell **board, int size);
 void freeBoard(Board *board);
 
