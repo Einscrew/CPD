@@ -4,7 +4,6 @@ int allocBoard(Board *b)
 {
     int j = 0;
 
-
     b->gameBoard = (Cell**)malloc(b->size*sizeof(Cell*));
 
     if(b->gameBoard == NULL)
@@ -158,6 +157,7 @@ void createVectorPossibilities(Cell *aux, int size)
     }
 }
 
+/* Creates and fills the game board reading the input file */
 int fillGameBoard(Board *board, char const* file)
 {
     int i = 0, j = 0;

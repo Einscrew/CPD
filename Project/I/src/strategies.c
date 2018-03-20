@@ -23,3 +23,5 @@ int backtrack(Board * b){
 
   return 1;
 }
+
+
