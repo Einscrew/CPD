@@ -119,7 +119,7 @@ int checkAllBoard(Board *board, Coord *cell)
                     cell->row = i;
                     cell->col = value;
                 }
-                else if(value > 3 && value < board->size * 2)
+                else if(value > board->size && value < board->size * 2)
                 {
                     cell->row = i + 1;
                     cell->col = value - board->size;
