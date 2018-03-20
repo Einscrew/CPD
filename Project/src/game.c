@@ -109,7 +109,7 @@ int fillGameBoard(Board *board, char const* file)
                         board->gameBoard[i][j].possibleValues = NULL;
                         board->gameBoard[i][j].countPossibilities = 0;
                     }
-                    
+
                     board->gameBoard[i][j].value = atoi(aux);
                     j++;
                 }
@@ -133,9 +133,9 @@ int fillGameBoard(Board *board, char const* file)
         for(j = 0; j < board->size*board->size; j++)
         {
             updateBoardValues(board, i, j, board->gameBoard[i][j].value);
-        }  
-    } 
-    
+        }
+    }
+
     fclose(fptr);
     free(line);
     return 0;
@@ -155,4 +155,3 @@ void printBoard(Cell **board, int size)
         printf("\n");
     }
 }
-

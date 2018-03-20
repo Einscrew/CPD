@@ -6,8 +6,8 @@
 #include <string.h>
 #include <ctype.h>
 
-#define MAX_SIZE 9 /* Max value of l */
-#define MIN_SIZE 2 /* Min value of l */
+#define MAX_SQUARE_SIZE 9 /* Max value of l */
+#define MIN_SQUARE_SIZE 2 /* Min value of l */
 #define MAX 100
 #define TRUE 1
 #define FALSE 0
