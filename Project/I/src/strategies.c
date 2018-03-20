@@ -14,6 +14,9 @@ int backtrack(Board * b){
       |
       else
       | continue
+
+      if not valid
+      | backtrack(&i, &j)
       */
     }
   }
