@@ -1,3 +1,7 @@
+//
+// Created by Catarina Aleixo on 20/03/2018.
+//
+
 #ifndef STRATEGIES
 #define STRATEGIES
 
@@ -7,3 +11,4 @@ int solve(Board * b);
 
 
 #endif
+
