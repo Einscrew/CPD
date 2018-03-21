@@ -1,26 +1,38 @@
-#include "game.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include "board.h"
+#include "strategies.h"
 
-int main(int argc, const char* argv[]){
+int main(int argc, char const *argv[]) {
 
-    Board *board = (Board*)malloc(sizeof(Board));
-  
+    Board *board = NULL;
+
     if(argv[1] != NULL)
     {
+        board = (Board*)malloc(sizeof(Board));
         if((fillGameBoard(board, argv[1])) == 0)
         {
-            deleteStrategy(board);
+            solve(board);
+            printf("SAIU DO SOLVE!\n");
+            /*deleteStrategy(board);*/
             if(checkAllBoard(board) == TRUE)
                 printf("Valid Sudoku!\n\n");
-            printBoard(board->gameBoard, (board->size * board->size));
-            freeBoard(board); 
+            else
+                printf("WRONG\n");
+            printBoard(board->gameBoard, (board->size));
+
+            /* Frees game board */
+            freeBoard(board);
+        }
+        else
+        {
+            free(board);
         }
     }
     else
     {
         printf("No file was specified!\n");
     }
-
-    free(board);
-
+    printf("THE END\n" );
     return 0;
 }

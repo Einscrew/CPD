@@ -1,9 +1,14 @@
+//
+// Created by Catarina Aleixo on 20/03/2018.
+//
+
 #ifndef STRATEGIES
 #define STRATEGIES
 
-#include "aux1.h"
+#include "board.h"
 
-void updateBoardValues(Board *board, int row, int col, int value);
-void deleteStrategy(Board *board);
+int solve(Board * b);
+
 
 #endif
+
