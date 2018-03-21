@@ -6,18 +6,18 @@
 #define MAX 100
 #define TRUE 1
 #define FALSE 0
+#define FIXED 2
 
 #include "utils.h"
-
 
 typedef struct Cell{
 
     int value;
-    int *possibleValues;
     int countPossibilities;
+    int fixed; /* To know if it's a fixed value in the board game */
+    int *possibleValues;
 
 }Cell;
-
 
 typedef struct Board{
 
@@ -29,13 +29,13 @@ typedef struct Board{
 
 
 int allocBoard(Board * b);
+int fillGameBoard(Board *board, char const* file);
 int checkValidity(Cell *aux, int size);
 int checkAllBoard(Board *board);
 void freeBoard(Board *board);
 
 
 void createVectorPossibilities(Cell *aux, int size);
-int fillGameBoard(Board *board, char const* file);
 void updateBoardValues(Board *board, int row, int col, int value);
 void printBoard(Cell **board, int size);
 

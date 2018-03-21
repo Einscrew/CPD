@@ -3,5 +3,7 @@
 
 #include "board.h"
 
+int solve(Board * b);
+
 
 #endif

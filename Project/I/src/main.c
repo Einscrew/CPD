@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "board.h"
+#include "strategies.h"
 
-#define FALSE 0
 
 int main(int argc, char const *argv[]) {
 
@@ -12,15 +12,19 @@ int main(int argc, char const *argv[]) {
   {
       board = (Board*)malloc(sizeof(Board));
       if((fillGameBoard(board, argv[1])) == 0)
-      {
-          /*deleteStrategy(board);
+      {   
+          solve(board);
+          printf("SAIU DO SOLVE!\n");
+          /*deleteStrategy(board);*/
           if(checkAllBoard(board) == TRUE)
-              printf("Valid Sudoku!\n\n");*/
+              printf("Valid Sudoku!\n\n");
           printBoard(board->gameBoard, (board->size));
 
-          //Already frees board
+          /* Frees game board */
           freeBoard(board);
-      }else{
+      }
+      else
+      {
         free(board);
       }
   }

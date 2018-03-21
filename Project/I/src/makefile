@@ -1,17 +1,17 @@
 CC=gcc
-FLAGS=-g -Wall
 EXTRA=-fopenmp
+FLAGS=-g -Wall
 
 I: main.o strategies.o board.o utils.o
-	$(CC) -o $@ $^ $(FLAGS) $(EXTRA)
+	$(CC) -o $@ $^ $(EXTRA)
 
-main.o: main.c strategies.h
+main.o: main.c board.h strategies.h utils.h
+	$(CC) -c $^ $(FLAGS) $(EXTRA)
+
+board.o: board.c utils.h 
 	$(CC) -c $^ $(FLAGS) $(EXTRA)
 
 strategies.o: strategies.c board.h
-	$(CC) -c $^ $(FLAGS) $(EXTRA)
-
-board.o: board.c utils.h
 	$(CC) -c $^ $(FLAGS) $(EXTRA)
 
 utils.o: utils.c
