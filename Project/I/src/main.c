@@ -13,12 +13,10 @@ int main(int argc, char const *argv[]) {
         if((fillGameBoard(board, argv[1])) == 0)
         {
             solve(board);
-            printf("SAIU DO SOLVE!\n");
-            /*deleteStrategy(board);*/
             if(checkAllBoard(board) == TRUE)
                 printf("Valid Sudoku!\n\n");
             else
-                printf("WRONG\n");
+                printf("INVALID SUDOKU!\n");
             printBoard(board->gameBoard, (board->size));
 
             /* Frees game board */

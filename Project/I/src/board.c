@@ -85,12 +85,14 @@ int fillGameBoard(Board *board, char const* file)
                         createVectorPossibilities(&(board->gameBoard[i][j]), board->size);
                         board->gameBoard[i][j].countPossibilities = (board->size);
                         board->gameBoard[i][j].fixed = FALSE;
+                        board->gameBoard[i][j].numberGuesses = 0;
                     }
                     else
                     {
                         board->gameBoard[i][j].possibleValues = NULL;
                         board->gameBoard[i][j].countPossibilities = 0;
                         board->gameBoard[i][j].fixed = TRUE;
+                        board->gameBoard[i][j].numberGuesses = 0;
                     }
 
                     board->gameBoard[i][j].value = atoi(aux);
@@ -127,11 +129,10 @@ int fillGameBoard(Board *board, char const* file)
 /* Checks each row, column or box */
 int checkValidity(Cell *aux, int size)
 {
-    //int exist[size] = {FALSE};
     int *exist = (int*)malloc(sizeof(int)*size);
     int i = 0;
 
-    //REVIEW
+
     for(i = 0; i < size; i++)
     {
         exist[i] = FALSE;
@@ -141,11 +142,12 @@ int checkValidity(Cell *aux, int size)
     {
         if(aux[i].value != 0)
         {
-            //If any elements was on a previous cell
+            /* Checks for duplicates, if a value is already turned true,
+               means that is already in a row, column or box */
             if(exist[aux[i].value - 1] == TRUE)
             {
                 free(exist);
-                if(aux[i].fixed == TRUE) /* In case of a conflict we need this variable */
+                if(aux[i].fixed == TRUE) /* Returns fixed if the conflict was with a fixed value */
                 {
                     return FIXED;
                 }
@@ -224,7 +226,6 @@ int checkAllBoard(Board *b)
         for(w = 0; w < b->size; w++)
         {
             rows[w] = b->gameBoard[i][w];
-            //printf("rows[%d]: %d\n", j, b->gameBoard[i][j].value);
         }
 
         val = checkValidity(rows, b->size);
@@ -304,6 +305,7 @@ void updateBoardValues(Board *board, int row, int col, int value)
             {
                 board->gameBoard[row][i].possibleValues[indexValue] = FALSE;
                 board->gameBoard[row][i].countPossibilities --;
+                board->gameBoard[row][i].numberGuesses = 0;
             }
         }
 
@@ -314,6 +316,7 @@ void updateBoardValues(Board *board, int row, int col, int value)
             {
                 board->gameBoard[i][col].possibleValues[indexValue] = FALSE;
                 board->gameBoard[i][col].countPossibilities --;
+                board->gameBoard[row][i].numberGuesses = 0;
             }
         }
 
@@ -324,6 +327,7 @@ void updateBoardValues(Board *board, int row, int col, int value)
             {
                 board->gameBoard[boxStartRow + i / board->squareSize][boxStartCol + i % board->squareSize].possibleValues[indexValue] = FALSE;
                 board->gameBoard[boxStartRow + i / board->squareSize][boxStartCol + i % board->squareSize].countPossibilities --;
+                board->gameBoard[row][i].numberGuesses = 0;
             }
         }
     }

@@ -15,6 +15,7 @@ typedef struct Cell{
     int value;
     int countPossibilities;
     int fixed; /* To know if it's a fixed value in the board game */
+    int numberGuesses;
     int *possibleValues;
 
 }Cell;
