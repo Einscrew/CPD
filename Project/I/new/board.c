@@ -27,10 +27,10 @@ int checkValidity(Board *b, int x)
     //| 8  9 10 11|
     //|12 13 14 15]
 
-    int i = 0, l = line(x,b->size), c = col(x,b->size), result = TRUE ;
+    int i = 0, l = line(x,b->size), c = col(x,b->size), result = TRUE;
     int bline = off(l, b->squareSize), bcol = off(c, b->squareSize);
 
-    int currb = 0, currl = no(0, l, b->size), currc = no(c, i, b->size);
+    int currb = 0, currl = no(0, l, b->size), currc = no(c, 0, b->size);
 
     int * existInLine = (int*)malloc(b->size * sizeof(int));
     int * existInCol = (int*)malloc(b->size * sizeof(int));
@@ -51,26 +51,29 @@ int checkValidity(Board *b, int x)
 
         //box
         //printf("%d %d\n", bcol, bline+i);//b->gameBoard[no(bcol, bline+i, b->size)].value);
-        if(((i+1)%b->squareSize) == 0){
-            bline -= b->squareSize;
-            currb = no(++bcol, bline+i, b->size);
-        }
-        if( b->gameBoard[currl+i].value  != 0 ){
-            if(existInLine[b->gameBoard[currl+i].value-1] == TRUE ){
-                result = FALSE;
-                break;
-            }
-            existInLine[b->gameBoard[currl+i].value-1] = TRUE;
-        }
-        if(b->gameBoard[currc+b->size].value){
 
-            if(existInCol[b->gameBoard[currc+b->size].value-1] == TRUE){
+        currc = no(c, i, b->size);
+        currl = no(i, l, b->size);
+        currb = no(bcol+i, bline, b->size);
+
+        //printf("currl: %d currc: %d currbox:%d \n", currl, currc, currb);
+
+        if(b->gameBoard[currl].value  != 0){
+            if(existInLine[b->gameBoard[currl].value-1] == TRUE){
                 result = FALSE;
                 break;
             }
-            existInCol[b->gameBoard[currc+b->size].value-1] = TRUE;
+            existInLine[b->gameBoard[currl].value-1] = TRUE;
         }
-        if(b->gameBoard[currb].value){
+        if(b->gameBoard[currc].value != 0){
+
+            if(existInCol[b->gameBoard[currc].value-1] == TRUE){
+                result = FALSE;
+                break;
+            }
+            existInCol[b->gameBoard[currc].value-1] = TRUE;
+        }
+        if(b->gameBoard[currb].value != 0){
             if(existInBox[b->gameBoard[currb].value -1] == TRUE){
                 result = FALSE;
                 break;
@@ -78,37 +81,18 @@ int checkValidity(Board *b, int x)
             existInBox[b->gameBoard[currb].value -1] = TRUE;
         }
 
+        if(((i+1)%b->squareSize) == 0){
+            bcol -= b->squareSize;
+            bline++;
+        }
+
     }
+
     free(existInLine);
     free(existInCol);
     free(existInBox);
 
     return result;
-    /*int *exist = (int*)malloc(sizeof(int)*size);
-    int i = 0;
-
-    //REVIEW
-    for(i = 0; i < size; i++)
-    {
-        exist[i] = FALSE;
-    }
-
-    for(i = 0; i < size; i++)
-    {
-        if(aux[i].value != 0)
-        {
-          //If any elements was on a previous cell
-          if(exist[aux[i].value - 1] == TRUE)
-          {
-            free(exist);
-            return FALSE;
-          }
-          exist[aux[i].value - 1] = TRUE;
-        }
-
-    }
-    free(exist);
-    return TRUE;*/
 }
 
 /* Checks if there aren't any duplicate values in each row, column or box */
@@ -180,9 +164,11 @@ int fillGameBoard(Board *board, char const* file)
                 {
                     if(atoi(aux) == 0)
                     {
-                        board->gameBoard[no(j,i,board->size)].fixed = 1;
-                    }else{
-                        board->gameBoard[no(j,i,board->size)].fixed = 0;
+                        board->gameBoard[no(j,i,board->size)].fixed = FALSE;
+
+                    }else
+                    {
+                        board->gameBoard[no(j,i,board->size)].fixed = TRUE;
                     }
 
                     board->gameBoard[no(j,i,board->size)].value = atoi(aux);
@@ -214,29 +200,29 @@ void printBoard(Board *b)
 {
     int i = 0, k = 0;
 
-    printf("| " );
+    /*printf("| " );
     for(k = 0; k <= b->size+ +1   ; k++){
         printf("- ");
     }
-    printf("|\n| " );
+    printf("|\n| " );*/
     for(i = 0; i < b->size*b->size; i++)
     {
         printf("%d ", b->gameBoard[i].value);
 
-        if ((i+1)%b->squareSize == 0) {
+        /*if ((i+1)%b->squareSize == 0) {
             printf("| " );
-        }
+        }*/
         if((i+1)%(b->size) == 0){
 
-            printf("\n| " );
+            printf("\n");
         }
-
+        /*
         if((i+1)%(b->size * b->squareSize) == 0) {
             for(k = 0; k <= b->size+ +1   ; k++){
                 printf("- ");
             }
             printf("|\n| " );
-        }
+        }*/
 
     }
     printf("\n" );

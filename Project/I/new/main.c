@@ -3,9 +3,6 @@
 #include "strategies.h"
 
 
-
-
-
 int main(int argc, char const *argv[]) {
 
   Board *board = NULL;
@@ -16,9 +13,11 @@ int main(int argc, char const *argv[]) {
       if((fillGameBoard(board, argv[1])) == 0)
       {
 
-          printBoard(board);
+          //printBoard(board);
           printf("Solution?%d\n", bruteforce(board));
+          //printf("Solution?%d\n", checkValidity(board, 40));
           printBoard(board);
+
           //Already frees board
           freeBoard(board);
       }
