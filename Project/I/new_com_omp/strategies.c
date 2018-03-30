@@ -116,7 +116,7 @@ Board *solveSudoku(Stack *head, Board *b, Board *solution)
 
         while(solutionFound == FALSE && current != NULL)
         {
-            i = index;
+            i = current->index;
 
             /* Look for the next unfixed value */
             do
