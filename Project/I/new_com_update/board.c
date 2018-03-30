@@ -1,3 +1,5 @@
+
+
 #include "board.h"
 
 #define no(x,y,l) (y*l+x)
@@ -32,9 +34,9 @@ int checkValidity(Board *b, int x)
 
     int currb = 0, currl = no(0, l, b->size), currc = no(c, 0, b->size);
 
-    int * existInLine = (int*)malloc(b->size * sizeof(int));
-    int * existInCol = (int*)malloc(b->size * sizeof(int));
-    int * existInBox = (int*)malloc(b->size * sizeof(int));
+    int *existInLine = (int*)malloc(b->size * sizeof(int));
+    int *existInCol = (int*)malloc(b->size * sizeof(int));
+    int *existInBox = (int*)malloc(b->size * sizeof(int));
 
     for(i = 0; i < b->size; i++){
         existInLine[i] = FALSE;
@@ -42,6 +44,7 @@ int checkValidity(Board *b, int x)
         existInBox[i] = FALSE;
 
     }
+
     for(i = 0; i < b->size; i++){
         //line
         //printf("%d\n", b->gameBoard[no(i, l, b->size)].value);
@@ -58,13 +61,14 @@ int checkValidity(Board *b, int x)
 
         //printf("currl: %d currc: %d currbox:%d \n", currl, currc, currb);
 
-        if(b->gameBoard[currl].value  != 0){
+        if(b->gameBoard[currl].value != 0){
             if(existInLine[b->gameBoard[currl].value-1] == TRUE){
                 result = FALSE;
                 break;
             }
             existInLine[b->gameBoard[currl].value-1] = TRUE;
         }
+
         if(b->gameBoard[currc].value != 0){
 
             if(existInCol[b->gameBoard[currc].value-1] == TRUE){
@@ -73,6 +77,7 @@ int checkValidity(Board *b, int x)
             }
             existInCol[b->gameBoard[currc].value-1] = TRUE;
         }
+
         if(b->gameBoard[currb].value != 0){
             if(existInBox[b->gameBoard[currb].value -1] == TRUE){
                 result = FALSE;
@@ -165,13 +170,18 @@ int fillGameBoard(Board *board, char const* file)
                     if(atoi(aux) == 0)
                     {
                         board->gameBoard[no(j,i,board->size)].fixed = FALSE;
+                        board->gameBoard[no(j,i,board->size)].countPossibilities = board->size;
+                        board->gameBoard[no(j,i,board->size)].minPoss = -1;
 
                     }else
                     {
                         board->gameBoard[no(j,i,board->size)].fixed = TRUE;
+                        board->gameBoard[no(j,i,board->size)].countPossibilities = 0;
+                        board->gameBoard[no(j,i,board->size)].minPoss = -1;
                     }
 
                     board->gameBoard[no(j,i,board->size)].value = atoi(aux);
+
                     j++;
                 }
                 else
@@ -188,12 +198,65 @@ int fillGameBoard(Board *board, char const* file)
         }
     }
 
+    if(updatePossibilities(board) == FALSE)
+    {
+        return FALSE;
+    }
+
     fclose(fptr);
     free(line);
-    return 0;
+    return TRUE;
 }
 
+int updatePossibilities(Board *board)
+{
+    int i = 0, j = 0, val = 0;
 
+    /* Updates the possibilities of each cell according to the values that are read from the file only */
+    for(i = 0; i < board->size * board->size; i++)
+    {
+        if(board->gameBoard[i].fixed == FALSE)
+        {
+            /* Try all possibilities and check if there's conflicts */
+            for (j = 1; j <= board->size; j++) {
+
+                board->gameBoard[i].value = j;
+                val = checkValidity(board, i);
+                if (val == FALSE){
+
+                    board->gameBoard[i].countPossibilities--;
+                }
+                else if(val == TRUE && board->gameBoard[i].minPoss == -1)
+                {
+                    board->gameBoard[i].minPoss = j - 1; /* That's the first possible value for this cell */
+                }
+                /* If a cell doesn't have possibilities then the sudoku hasn't solution */
+                if(board->gameBoard[i].countPossibilities == 0)
+                {
+                    printf("Invalid Sudoku!\n");
+                    return FALSE;
+                }
+
+                /* If there's only one possibility assigns it */
+                if(j == board->size && board->gameBoard[i].countPossibilities == 1)
+                {
+                    board->gameBoard[i].value = board->gameBoard[i].minPoss + 1;
+                    board->gameBoard[i].fixed = TRUE;
+                }
+                else
+                {
+                    /* Put the initial state again */
+                    board->gameBoard[i].value = 0;
+                }
+
+                //printf("count i = %d [%d]: %d\n", i, j,board->gameBoard[i].countPossibilities);
+            }
+        }
+        //printf("\n");
+    }
+
+    return TRUE;
+}
 
 /* Prints the game board */
 void printBoard(Board *b)
