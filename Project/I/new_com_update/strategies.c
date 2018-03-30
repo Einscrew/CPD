@@ -2,7 +2,7 @@
 
 int bruteforce(Board *b){
 
-    int i, valid = TRUE;
+    int i = 0, valid = TRUE;
 
     for(i = 0; i < b->size*b->size; i++){
 
@@ -14,8 +14,14 @@ int bruteforce(Board *b){
         // For non fixed values:
         if(b->gameBoard[i].fixed == FALSE){
 
+            if(b->gameBoard[i].value == 0)
+            {
+                b->gameBoard[i].value = b->gameBoard[i].minPoss;
+            }
+
             do
             {
+                /* Starts by trying the first possible value for the cell */
                 b->gameBoard[i].value++;
 
                 valid = checkValidity(b, i);
@@ -23,13 +29,14 @@ int bruteforce(Board *b){
                     break;
                 }
 
-            }while(b->gameBoard[i].value < b->size);
+            }while(b->gameBoard[i].value < b->size/*|| b->gameBoard[i].numberGuesses < b->gameBoard[i].countPossibilities*/);
 
             if(valid == FALSE){
 
                 //backtrack
                 do
                 {
+                    /* Resets the value  */
                     if(b->gameBoard[i].fixed == FALSE)
                     {
                         b->gameBoard[i].value = 0;
