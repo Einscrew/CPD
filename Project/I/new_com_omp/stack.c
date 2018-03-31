@@ -77,14 +77,14 @@ Stack *popElem(Stack *head, Board *b, int *index)
     //printBoard(&(popBoard->boardCopy));
 }
 
-Stack *getElem(Stack *head)
+Stack *getElem(Stack **head)
 {
     Stack *res = NULL;
 
     if(head != NULL)
     {
-        res = head;
-        head = res->next;
+        res = *head;
+        *head = res->next;
     }
 
     return res;

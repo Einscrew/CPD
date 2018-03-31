@@ -299,3 +299,4 @@ Board *copyBoard(Board *b, Board *solution)
     return solution;
 }
 
+
