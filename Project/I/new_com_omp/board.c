@@ -191,15 +191,20 @@ int fillGameBoard(Board *board, char const* file)
             j=0;
             i++;
         }
-    }
-
-    if(updatePossibilities(board) == FALSE)
-    {
-        state = FALSE;
+        
+        if(updatePossibilities(board) == FALSE)
+        {
+            state = FALSE;
+        }
     }
 
     fclose(fptr);
-    free(line);
+
+    if(line != NULL)
+    {
+        free(line);
+    }
+    
     return state;
 }
 

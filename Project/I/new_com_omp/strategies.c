@@ -1,6 +1,6 @@
 #include "strategies.h"
 
-Stack *bruteforce(Board *b, Stack *head){
+Stack *fillStack(Board *b, Stack *head){
 
     int i = 0, num = 0, increasePos = FALSE;
     int index = 0;
@@ -33,7 +33,8 @@ Stack *bruteforce(Board *b, Stack *head){
 
                 if(checkValidity(b, i))
                 {
-                    head = pushElem(&head, *b, i);
+                    head = pushElem(head, *b, i);
+                    //printBoard(&(head->boardCopy));
 
                     if(head == NULL)
                     {
@@ -72,9 +73,8 @@ Stack *bruteforce(Board *b, Stack *head){
                     i++;
                     if(i == b->size*b->size - 1) /* Means that a solution was found */
                     {
-                        head = pushElem(&head, *b, i);
+                        head = pushElem(head, *b, i);
                         break;
-
                     }
 
                 }while((b->gameBoard[i].fixed == TRUE && i < b->size*b->size) || (b->gameBoard[i].fixed == FALSE && b->gameBoard[i].value == b->size));
@@ -90,67 +90,87 @@ Stack *bruteforce(Board *b, Stack *head){
 
 Board *solveSudoku(Stack *head, Board *b, Board *solution)
 {
-    Stack *current = NULL;
-    int i = 0, solutionFound = FALSE, inc = 0;
+    //Stack *current = NULL;
+    int i = 0, solutionFound = FALSE, inc = 0, index = 0;
+    Board *currBoard = NULL;
 
-    head = bruteforce(b, head);
+    head = fillStack(b, head);
 
-    omp_set_num_threads(4);
+    omp_set_num_threads(8);
 
-    #pragma omp parallel shared(solutionFound) private(i, current, inc)
-    {
-        #pragma omp critical
-        current = getElem(&head);
-
-        while(solutionFound == FALSE && current != NULL)
+    #pragma omp parallel shared(solutionFound, solution, head, b) private(i, inc, index) firstprivate(currBoard)
+    { 
+        while(solutionFound == FALSE && head != NULL)
         {
-            i = current->index;
+        	#pragma omp critical (pop)
+        	{
+        		if(head != NULL)
+				{	  	
+		        	currBoard = (Board*)malloc(sizeof(Board));
+				    currBoard->size = b->size;
+				    currBoard->squareSize = b->squareSize;
+				    currBoard = allocBoard(currBoard);
+			    	head = popElem(head, currBoard, &index);
+			    }
+			    else
+			    {
+			    	currBoard = NULL;
+			    }
+	        	//current = getElem(&head);
+        	}
 
-            /* Look for the next unfixed value */
-            i = incPosition(&(current->boardCopy), i);
-            current->boardCopy.gameBoard[i].value = current->boardCopy.gameBoard[i].minPoss;
+        	if(currBoard != NULL)
+        	{
+	            /* Look for the next unfixed value */
+	            i = incPosition(currBoard, index);
+	            currBoard->gameBoard[i].value = currBoard->gameBoard[i].minPoss;
 
-            inc = 1;
+	            inc = 1;
 
-            while(i < b->size * b->size && solutionFound == FALSE && inc > 0)
-            {
-                if(current->boardCopy.gameBoard[i].value < b->size && current->boardCopy.gameBoard[i].fixed == FALSE)
-                {
-                    current->boardCopy.gameBoard[i].value++;
+	            while(i < b->size * b->size && solutionFound == FALSE && inc > 0)
+	            {
+	            	//printf("i: %d\n", i);
+	                if(currBoard->gameBoard[i].value < b->size && currBoard->gameBoard[i].fixed == FALSE)
+	                {
+	                    currBoard->gameBoard[i].value++;
 
-                    if(checkValidity(&(current->boardCopy), i) == TRUE)
-                    {
-                        i = incPosition(&(current->boardCopy), i);
-                        current->boardCopy.gameBoard[i].value = current->boardCopy.gameBoard[i].minPoss;
-                        inc++;
-                    }
-                }
-                else
-                {
-                    /* Turns back to the initial value */
-                    current->boardCopy.gameBoard[i].value = 0;
+	                    if(checkValidity(currBoard, i) == TRUE)
+	                    {
+	                        i = incPosition(currBoard, i);
+	                        currBoard->gameBoard[i].value = currBoard->gameBoard[i].minPoss;
+	                        inc++;
+	                    }
+	                }
+	                else
+	                {
+	                    /* Turns back to the initial value */
+	                    currBoard->gameBoard[i].value = 0;
 
-                    i = decPosition(&(current->boardCopy), i);
-                    inc--;
-                }
-            }
+	                    i = decPosition(currBoard, i);
+	                    inc--;
+	                }
+	            }
+	            
+	            
+	        	if(i == b->size*b->size)
+	            {
+	            	//printf("SOLUÇÃO FOUND by thread %d\n", omp_get_thread_num());
+	                solutionFound = TRUE;
+	                solution = copyBoard(currBoard, solution);
+	                free(currBoard->gameBoard);		
+	       			free(currBoard);
+	                continue;
+	            }
 
-            if(i == b->size*b->size)
-            {
-                solutionFound = TRUE;
-                solution = copyBoard(&(current->boardCopy), solution);
-                continue;
-            }
+	            if(currBoard->gameBoard != NULL)
+	            {           	
+	            	free(currBoard->gameBoard);	
+	           		free(currBoard);
+	            }
 
-            free(current->boardCopy.gameBoard);
-            free(current);
-
-            #pragma omp critical
-            current = getElem(&head);
+        	}        	    	
         }
     }
-
-
 
     return solution;
 }

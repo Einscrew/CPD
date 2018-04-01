@@ -40,18 +40,35 @@ Stack *newElem(Board b, int index)
     return new;
 }
 
-Stack *pushElem(Stack **head, Board b, int index)
+Stack *pushElem(Stack *head, Board b, int index)
 {
     Stack *new = newElem(b, index);
+    Stack *aux = NULL;
     if(new == NULL)
     {
         return NULL;
     }
-    new->next = *head;
-    *head = new;
 
-    return *head;
-    //printBoard(&(*head)->boardCopy);
+    if(head == NULL)
+    {
+        new->next = head;
+        head = new;
+    }
+    else
+    {
+        aux = head;
+        while(aux->next != NULL)
+        {
+            aux = aux->next;
+        }
+
+        aux->next = new;
+        new->next = NULL;
+    }
+    
+    /*printf("Head board\n");
+    printBoard(&(head->boardCopy));*/
+    return head;
 }
 
 Stack *popElem(Stack *head, Board *b, int *index)
@@ -72,22 +89,9 @@ Stack *popElem(Stack *head, Board *b, int *index)
     head = head->next;
     free(aux->boardCopy.gameBoard);
     free(aux);
+    //printf("Sai pop\n");
 
     return head;
-    //printBoard(&(popBoard->boardCopy));
-}
-
-Stack *getElem(Stack **head)
-{
-    Stack *res = NULL;
-
-    if(head != NULL)
-    {
-        res = *head;
-        *head = res->next;
-    }
-
-    return res;
 }
 
 int checkEmpty(Stack *head)
