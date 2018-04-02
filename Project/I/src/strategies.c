@@ -106,7 +106,6 @@ int solver(Board *b)
             }
 
 
-
             if(currBoard != NULL){
 
 
