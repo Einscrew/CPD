@@ -1,0 +1,1 @@
+/usr/bin/gcc -g   CMakeFiles/Project.dir/I/src/board.c.o CMakeFiles/Project.dir/I/src/main.c.o CMakeFiles/Project.dir/I/src/stack.c.o CMakeFiles/Project.dir/I/src/strategies.c.o CMakeFiles/Project.dir/I/src/utils.c.o  -o Project 
