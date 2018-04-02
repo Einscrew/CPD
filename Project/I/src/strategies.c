@@ -1,5 +1,6 @@
 #include "strategies.h"
 
+
 void fillQueue(Queue *q, Board *b, int threshold, int level)
 {
     int i = 0;
@@ -42,17 +43,19 @@ void fillQueue(Queue *q, Board *b, int threshold, int level)
     } */                 
 }
 
-/*void testQueue(Board *b)
+void testQueue(Board *b)
 {
     Queue *one = create();
     Queue *two = create();
 
-    push(b, one);
-    push(b, two);
-    push(b, one);
-    push(b, two);
-    push(b, one);
-    push(b, two);
+    int i = 0;
+
+    push(b, one, i);
+    push(b, two, i);
+    push(b, one, i);
+    push(b, two, i);
+    push(b, one, i);
+    push(b, two, i);
     
     printQueue(one);
     printQueue(two);
@@ -61,7 +64,18 @@ void fillQueue(Queue *q, Board *b, int threshold, int level)
     printQueue(one);
     printQueue(two);
 
-}*/
+    
+    printf("POP:\n");
+    pop(one, &i);
+    pop(one, &i);
+    pop(one, &i);
+    pop(one, &i);
+    pop(one, &i);
+    Board * bi = pop(one, &i);
+    printBoard(bi);
+    printQueue(one);
+
+}
 
 int solver(Board *b)
 {
@@ -71,50 +85,70 @@ int solver(Board *b)
     fillQueue(mainQ, b, 1, 0);
     printQueue(mainQ);
     printf("Size: %d\n", mainQ->size);
+    omp_set_num_threads(4);
 
-    #pragma omp parallel shared(mainQ, solFound) private(i) 
+    #pragma omp parallel shared(mainQ, solFound) private(i)
     {
+        #pragma omp master
+            printf("THREADS: %d\n", omp_get_num_threads());
+
         Board *currBoard = NULL;
         Queue *privQ = create();
-        int index = 0;
+        int index = 0;  
 
         while(solFound == FALSE)
         {
             #pragma omp critical (updateStack)
             {
                 currBoard = pop(mainQ, &index);
+                
+                //printBoard(currBoard);
             }
 
-            /* Check if currBoard is the solution was found */
-            if(index == currBoard->size * currBoard->size - 1)
-            {
-                solFound = TRUE;
-                printBoard(currBoard);
-                continue;
-            }
 
-            /* Looks for the next empty cell */
-            do
-            {
-                index++;
 
-            }while(currBoard->gameBoard[index].fixed == TRUE);
+            if(currBoard != NULL){
 
-            for(i = 1; i <= currBoard->size; i++)
-            {
-                currBoard->gameBoard[index].value = i;
-                if(checkValidity(b, index) == TRUE)
+
+                /* Looks for the next empty cell */
+                do
                 {
-                    /* Push possible boards into the queue */
-                    push(currBoard, privQ, index);
+                    index++;
+                    if(index == currBoard->size * currBoard->size){
+                        break;
+                    }
+
+                }while(currBoard->gameBoard[index].fixed == TRUE && index < currBoard->size*currBoard->size);
+                /* Check if currBoard is the solution was found */
+                if(index == currBoard->size * currBoard->size)
+                {
+                    solFound = TRUE;
+                    printBoard(currBoard);
+                    continue;
                 }
-            }
 
-            free(currBoard);
+                //printf("AAAAAAAAAAAAAA[%d]\n", index);
+                
+                //printBoard(currBoard);
+                for(i = 1; i <= currBoard->size; i++)
+                {
+                    currBoard->gameBoard[index].value = i;
+                    if(checkValidity(currBoard, index) == TRUE)
+                    {
+                        /* Push possible boards into the queue */
+                       // printf("VVVVVVVVVVVVVV[%d]\n", index);
+                       // printBoard(currBoard);
+                        push(currBoard, privQ, index);
 
-            #pragma omp critical (updateStack)
-            {
-                merge(mainQ, privQ);
+                    }
+                }
+
+                free(currBoard);
+
+                #pragma omp critical (updateStack)
+                {
+                    merge(mainQ, privQ);
+                }
             }
         }
     }

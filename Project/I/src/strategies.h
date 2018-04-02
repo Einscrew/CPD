@@ -3,6 +3,7 @@
 
 #include "board.h"
 #include "queue.h"
+#include <omp.h>
 
 void testQueue(Board *b);
 
