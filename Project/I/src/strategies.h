@@ -9,6 +9,6 @@ void testQueue(Board *b);
 
 
 int solver(Board *b);
-int bruteforce(Board *b);
+int bruteforce(Board *b, int start);
 
 #endif

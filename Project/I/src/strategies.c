@@ -3,7 +3,7 @@
 
 void fillQueue(Queue *q, Board *b, int threshold, int level)
 {
-    int i = 0;
+    //int i = 0;
 
     push(b, q, -1);
 
@@ -82,10 +82,11 @@ int solver(Board *b)
     Queue *mainQ = create();
     int i = 0, solFound = FALSE;
     
-    fillQueue(mainQ, b, 1, 0);
+    //fillQueue(mainQ, b, 1, 0);
+    push(b, mainQ, 0);
     printQueue(mainQ);
     printf("Size: %d\n", mainQ->size);
-    omp_set_num_threads(4);
+    
 
     #pragma omp parallel shared(mainQ, solFound) private(i)
     {
@@ -95,6 +96,7 @@ int solver(Board *b)
         Board *currBoard = NULL;
         Queue *privQ = create();
         int index = 0;  
+        int threshold = 3;
 
         while(solFound == FALSE)
         {
@@ -105,49 +107,60 @@ int solver(Board *b)
                 //printBoard(currBoard);
             }
 
-
             if(currBoard != NULL){
 
 
-                /* Looks for the next empty cell */
-                do
-                {
-                    index++;
-                    if(index == currBoard->size * currBoard->size){
-                        break;
+                if(index >= threshold){
+                    if((solFound = bruteforce(currBoard, index)) == TRUE){
+                            printf("EHEHEH\n");
+                        #pragma omp critical
+                            printBoard(currBoard);
+                        continue;
                     }
-
-                }while(currBoard->gameBoard[index].fixed == TRUE && index < currBoard->size*currBoard->size);
-                /* Check if currBoard is the solution was found */
-                if(index == currBoard->size * currBoard->size)
-                {
-                    solFound = TRUE;
-                    printBoard(currBoard);
-                    continue;
                 }
+                else{
+                    /* Looks for the next empty cell */
+                    while(currBoard->gameBoard[index].fixed == TRUE && index < currBoard->size*currBoard->size){
+                        index++;
+                        threshold++;
+                        if(index == currBoard->size * currBoard->size){
+                            break;
+                        }
 
-                //printf("AAAAAAAAAAAAAA[%d]\n", index);
-                
-                //printBoard(currBoard);
-                for(i = 1; i <= currBoard->size; i++)
-                {
-                    currBoard->gameBoard[index].value = i;
-                    if(checkValidity(currBoard, index) == TRUE)
+                    }
+                    /* Check if currBoard is the solution was found */
+                    if(index == currBoard->size * currBoard->size)
                     {
-                        /* Push possible boards into the queue */
-                       // printf("VVVVVVVVVVVVVV[%d]\n", index);
+                        solFound = TRUE;
                        // printBoard(currBoard);
-                        push(currBoard, privQ, index);
-
+                        continue;
                     }
+
+                    //printf("AAAAAAAAAAAAAA[%d]\n", index);
+                    
+                    //printBoard(currBoard);
+                    for(i = 1; i <= currBoard->size; i++)
+                    {
+                        currBoard->gameBoard[index].value = i;
+                        if(checkValidity(currBoard, index) == TRUE)
+                        {
+                            /* Push possible boards into the queue */
+                           //printf("VVVVVVVVVVVVVV[%d]\n", index);
+                           push(currBoard, privQ, index + 1);
+                           //printBoard(currBoard);
+
+                        }
+                    }
+
+                    free(currBoard);
+
+                    #pragma omp critical (updateStack)
+                    {
+                        merge(mainQ, privQ);
+                    }
+                    
                 }
 
-                free(currBoard);
-
-                #pragma omp critical (updateStack)
-                {
-                    merge(mainQ, privQ);
-                }
             }
         }
     }
@@ -160,12 +173,11 @@ int solver(Board *b)
 
 
 
-
-int bruteforce(Board *b){
+int bruteforce(Board *b, int start){
 
     int i, valid = TRUE;
 
-    for(i = 0; i < b->size*b->size; i++){
+    for(i = start; i < b->size*b->size; i++){
 
         if(valid == FALSE)
         {
@@ -198,9 +210,9 @@ int bruteforce(Board *b){
 
                     i--;
 
-                }while ((b->gameBoard[i].fixed == TRUE && i > 0) || b->gameBoard[i].value == b->size);
+                }while ((b->gameBoard[i].fixed == TRUE && i > start) || b->gameBoard[i].value == b->size);
 
-                if(i == 0 && b->gameBoard[i].value == b->size){
+                if(i == start && b->gameBoard[i].value == b->size){
                     return FALSE;
                 }
 
