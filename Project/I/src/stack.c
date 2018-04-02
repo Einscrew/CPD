@@ -1,34 +1,23 @@
 #include <stdlib.h>
 #include "stack.h"
 
-Stack * create(int capacity) {
+Stack *create() {
 	Stack *s = (Stack *) malloc(sizeof(Stack));
 	if(s == NULL){
 		printf("No stack created\n");
 		return NULL;
 	}
 
-	s->capacity = capacity;
 	s->size = 0;
 	s->top = NULL;
 	return s;
-}
-
-int full(Stack *s) {
-	return (s->size >= s->capacity)? 1 : 0;
 }
 
 int empty(Stack *s) {
 	return (s->size == 0)? 1 : 0;
 }
 
-int push(Board * b, Stack * s, int index){
-
-	if (full(s))
-	{
-		printf("Stack full\n");
-		return 0;
-	}
+int push(Board *b, Stack * s){
 
 	Elem * e = (Elem*)malloc(sizeof(Elem));
 	if(s == NULL){
@@ -38,7 +27,6 @@ int push(Board * b, Stack * s, int index){
 
 
 	e->board = copyBoard(b);
-	(index >= 0)? ( e->board->gameBoard[index].fixed == FALSE )? e->board->gameBoard[index].value++ : index : index;
 	//copy boards!!!!!!;
 	e->next = s->top;
 	s->top = e;

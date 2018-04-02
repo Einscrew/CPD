@@ -14,9 +14,12 @@ int main(int argc, char const *argv[]) {
       {
 
           //printBoard(board);
-          printf("Solution?%d\n", bruteforce(board));
+          //printf("Solution?%d\n", bruteforce(board));
           //printf("Solution?%d\n", checkValidity(board, 40));
-          printBoard(board);
+          //printBoard(board);
+
+          solver(board);
+          //testQueue(board);
 
           //Already frees board
           freeBoard(board);

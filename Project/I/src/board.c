@@ -193,37 +193,36 @@ int fillGameBoard(Board *board, char const* file)
     return 0;
 }
 
+Board *copyBoard(Board * original){
+
+    Board * new = (Board *)malloc(sizeof(Board));
+
+    new->size = original->size;
+    new->squareSize = original->squareSize;
+
+    allocBoard(new);
+    
+    
+    for(int i = 0 ; i < original->size*original->size ; i++){
+        new->gameBoard[i].value = original->gameBoard[i].value;
+        new->gameBoard[i].fixed = original->gameBoard[i].fixed;
+    }
+    return new;
+}
 
 
 /* Prints the game board */
 void printBoard(Board *b)
 {
-    int i = 0, k = 0;
+    int i = 0;
 
-    /*printf("| " );
-    for(k = 0; k <= b->size+ +1   ; k++){
-        printf("- ");
-    }
-    printf("|\n| " );*/
     for(i = 0; i < b->size*b->size; i++)
     {
         printf("%d ", b->gameBoard[i].value);
-
-        /*if ((i+1)%b->squareSize == 0) {
-            printf("| " );
-        }*/
         if((i+1)%(b->size) == 0){
 
             printf("\n");
         }
-        /*
-        if((i+1)%(b->size * b->squareSize) == 0) {
-            for(k = 0; k <= b->size+ +1   ; k++){
-                printf("- ");
-            }
-            printf("|\n| " );
-        }*/
-
     }
     printf("\n" );
 }

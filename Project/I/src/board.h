@@ -33,6 +33,7 @@ void freeBoard(Board *b);
 
 
 int fillGameBoard(Board *b, char const* file);
+Board *copyBoard(Board * original);
 void printBoard(Board * b);
 
 #endif

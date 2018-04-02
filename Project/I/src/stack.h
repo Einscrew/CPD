@@ -11,17 +11,15 @@ typedef struct Elem{
 
 typedef struct Stack{
 	Elem * top;
-	int capacity;
 	int size;
 }Stack;
 
 
-Stack * create(int capacity);
+Stack * create();
 
-int full(Stack *s);
 int empty(Stack *s);
 
-int push(Board * b, Stack * s, int i);
+int push(Board * b, Stack * s);
 Board * pop(Stack *s);
 
 void destroyElem(Elem * e);
