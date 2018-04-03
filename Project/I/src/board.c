@@ -52,9 +52,9 @@ void removeMasks(Board * b, int i)  {
 
     int row = row(i,b->size), col = col(i,b->size), box = box(i,b->squareSize);
     
-    b->rowMask[row] = removemask(b->rowMask[row], value);
-    b->colMask[col] = removemask(b->colMask[col], value);
-    b->boxMask[box] = removemask(b->boxMask[box], value);
+    b->rowMask[row] = removemask((b->rowMask[row]), value);
+    b->colMask[col] = removemask((b->colMask[col]), value);
+    b->boxMask[box] = removemask((b->boxMask[box]), value);
 }
 
 void updateMasks(Board * b, int i){
@@ -219,7 +219,7 @@ int fillGameBoard(Board *board, char const* file)
     else
     {
         /* Gets the board size */
-        if(fscanf(fptr, "%d\n", &(board->squareSize)) != 1){
+        if(fscanf(fptr, "%d\n", (int*)&(board->squareSize)) != 1){
             printf("Board size not specified in the file!\n");
             fclose(fptr);
             return -1;
@@ -227,6 +227,8 @@ int fillGameBoard(Board *board, char const* file)
         else if(board->squareSize <= MAX_SQUARE_SIZE && board->squareSize >= MIN_SQUARE_SIZE)
         {
             board->size = board->squareSize*board->squareSize;
+            printf("%d[%lu] %d[%lu]\n",board->size, sizeof(board->size), board->squareSize, sizeof(board->squareSize) );
+
             if(allocBoard(board) != 0)
             {
                 fclose(fptr);

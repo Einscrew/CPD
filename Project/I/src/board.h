@@ -22,8 +22,8 @@
 
 
 typedef struct Cell{
-    int value;
-    int fixed;
+    char value;
+    char fixed;
 }Cell;
 
 
@@ -33,8 +33,8 @@ typedef struct Board{
     int * rowMask;
 	int * colMask;
     int * boxMask;	
-    int size;
-    int squareSize;
+    char size;
+    char squareSize;
 
 }Board;
 
