@@ -2,10 +2,10 @@
 #define STRATEGIES
 
 #include "board.h"
-#include "stack.h"
+#include "queue.h"
 
 
-void testStack(Board * b);
+int solver(Board *b);
 
 int bruteforce(Board *b, int start);
 
