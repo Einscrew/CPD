@@ -36,10 +36,9 @@ int push(Board * b, Stack * s, int index){
 		return 0;
 	}
 
-
 	e->board = copyBoard(b);
 	(index >= 0)? ( e->board->gameBoard[index].fixed == FALSE )? e->board->gameBoard[index].value++ : index : index;
-	//copy boards!!!!!!;
+
 	e->next = s->top;
 	s->top = e;
 	s->size++;

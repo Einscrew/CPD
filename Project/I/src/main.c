@@ -14,8 +14,8 @@ int main(int argc, char const *argv[]) {
             {
 
             	//printf("Valid: %d\n",checkValidity(board, 0, 1));
-                //printf("Solution?%d\n", bruteforce(board, 0));
-                printf("Solution?%d\n", checkValidity(board, 0, 1));
+                printf("Solution?%d\n", bruteforce(board, 0));
+                //printf("Solution?%d\n", checkValidity(board, 0, 1));
                 printBoard(board);
 
 

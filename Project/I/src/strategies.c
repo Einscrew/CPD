@@ -56,7 +56,8 @@ int parallelSolver(Board * b){
 }
 
 int makeGuess(Board * b, int i){
-//	removeMasks(b, i);
+
+    removeMasks(b, i);
 	int value = b->gameBoard[i].value + 1;
 
 	while(value <= b->size){
@@ -78,7 +79,7 @@ int bruteforce(Board *b, int s){
 	int i,valid = TRUE;
 
 	for(i = s; i < b->size*b->size; i++){
-		printf("%d\n", i);
+		//printf("%d\n", i);
 
 		if(valid == FALSE)
 		{
@@ -97,11 +98,12 @@ int bruteforce(Board *b, int s){
 					if(b->gameBoard[i].fixed == FALSE)
 					{
 						// Erase guess & masks
+                        removeMasks(b, i);
                         b->gameBoard[i].value = 0;
-						removeMasks(b, i);
+						
 					}
 					i--;
-				}while ((i >= s && b->gameBoard[i].fixed == TRUE) || (int)b->gameBoard[i].value == b->size);
+				}while ((i >= s && b->gameBoard[i].fixed == TRUE) || b->gameBoard[i].value == b->size);
 
 				if(i <= s && b->gameBoard[i].value == b->size){
 					return FALSE;
