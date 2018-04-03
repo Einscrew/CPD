@@ -27,6 +27,11 @@ Board * copyBoard(Board * original){
 
     Board * new = (Board *)malloc(sizeof(Board));
 
+    if (new == NULL)
+    {
+        printf("Could not alloc board\n");
+    }
+
     new->size = original->size;
     new->squareSize = original->squareSize;
 
@@ -153,7 +158,7 @@ int fillGameBoard(Board *board, char const* file)
         else if(board->squareSize <= MAX_SQUARE_SIZE && board->squareSize >= MIN_SQUARE_SIZE)
         {
             board->size = board->squareSize*board->squareSize;
-            printf("%d[%lu] %d[%lu]\n",board->size, sizeof(board->size), board->squareSize, sizeof(board->squareSize) );
+            //printf("%d[%lu] %d[%lu]\n",board->size, sizeof(board->size), board->squareSize, sizeof(board->squareSize) );
 
             if(allocBoard(board) != 0)
             {

@@ -5,19 +5,19 @@ EXTRA=-fopenmp
 I: main.o strategies.o queue.o board.o utils.o
 	$(CC) -o $@ $^ $(FLAGS) $(EXTRA)
 
-main.o: main.c strategies.h
+main.o: main.c 
 	$(CC) -c $^ $(FLAGS) $(EXTRA)
 
-strategies.o: strategies.c queue.h board.h
+strategies.o: strategies.c 
 	$(CC) -c $^ $(FLAGS) $(EXTRA)
 
-queue.o: queue.c board.h
+queue.o: queue.c 
 	$(CC) -c $^ $(FLAGS) $(EXTRA)
 
 #stack.o: stack.c board.h
 #	$(CC) -c $^ $(FLAGS) $(EXTRA)	
 
-board.o: board.c utils.h
+board.o: board.c 
 	$(CC) -c $^ $(FLAGS) $(EXTRA)
 
 utils.o: utils.c
