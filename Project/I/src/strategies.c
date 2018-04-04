@@ -71,7 +71,7 @@ int solver(Board *b)
     printQueue(mainQ);
     printf("Size: %d\n", mainQ->size);
     
-    omp_set_num_threads(4);
+    omp_set_num_threads(1);
 
     #pragma omp parallel shared(mainQ, solFound)
     {
