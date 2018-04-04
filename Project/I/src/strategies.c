@@ -4,8 +4,7 @@
 
 
 int END = FALSE;
-
-void search(Board * b, int index){
+//void search(Board * b, int index){
 
 /*    int v = b->gameBoard[index].value;
     #pragma omp critical
@@ -18,11 +17,8 @@ void search(Board * b, int index){
         printf("[%d] [value:%d]v:%d s \n", omp_get_thread_num(), b->gameBoard[index].value, v);
     }
 */
-
-
-
     //printf("[%d]@%d\n", omp_get_thread_num(), index );
-    if(END == TRUE){
+   /* if(END == TRUE){
         return;
     }
 
@@ -61,14 +57,76 @@ void search(Board * b, int index){
     }
     return;
 }
+*/
+void createTask(Board *b, int level, int bottom)
+{
+    int i = 0;
 
+    // bottom = (bottom > 4)? 4: bottom;
+
+    do{
+        level++;
+        bottom++;
+    }while(level < b->size*b->size && b->gameBoard[level].fixed == TRUE);
+
+    if(level == b->size*b->size)
+    {
+        END=TRUE;
+        return;
+    }
+
+    
+    for(i = 1; i <= b->size; i++)
+    {
+        if(checkValidity(b, level, i) == TRUE)
+        {
+            b->gameBoard[level].value = i;
+            updateMasks(b, level);
+            if(level < bottom )
+            {
+                createTask( b, bottom, level+1);
+            }
+            else
+            {
+                // task()
+                #pragma omp task
+                search(b, level);
+            }
+            removeMasks(b, level);
+            //b->gameBoard[level].value = old;
+        }
+    }
+    b->gameBoard[level].value = 0;
+                    
+}
+
+
+
+void search(Board *b, int index)
+{
+     if(END == TRUE){
+        return;
+    }
+
+    do{
+        index++;
+    }while(b->gameBoard[index].fixed == TRUE && index < b->size*b->size);   
+    //printf("[%d]got b[%d]=%d\n", omp_get_thread_num(), index, b->gameBoard[index-1].value);
+    if(index >= b->size*b->size){
+        printBoard(b);
+        END = TRUE;
+        return;
+    }
+
+    createTask(b, index, b->squareSize);
+}
 
 int solver(Board *b)
 {
     
     int size = b->size;
 
-    omp_set_num_threads(1);
+    omp_set_num_threads(4);
 
     int index = 0;
     
@@ -87,7 +145,7 @@ int solver(Board *b)
                 printf("[%d]Created b[%d]=%d\n", omp_get_thread_num(), index, value);
                 
                 //task()
-                #pragma omp task
+                #pragma omp task untied
                 {
                     Board * newB = copyBoard(b);
                     
