@@ -81,7 +81,7 @@ int solver(Board *b)
         Board *currBoard = NULL;
         Queue *privQ = create();
         int result = FALSE;
-        int index = 0, i= 0, valid;  
+        int index = 0, i= 0, valid = FALSE;  
         int threshold = 4;
 
         while(solFound == FALSE)
@@ -111,7 +111,6 @@ int solver(Board *b)
                     //result = bruteforce(currBoard, index+1);
                     index++;
 
-
                     for(i = index; i < currBoard->size*currBoard->size ; i++){
                         //printf("%d\n", i);
 
@@ -137,6 +136,7 @@ int solver(Board *b)
                                     }
 
                                     i--;
+
                                 }while (i >= index && (currBoard->gameBoard[i].fixed == TRUE || currBoard->gameBoard[i].value == currBoard->size));
 
                                 if((i <= index && currBoard->gameBoard[i].value == currBoard->size) || solFound == TRUE){
