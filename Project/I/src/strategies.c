@@ -5,6 +5,114 @@
 
 int END = FALSE;
 
+void search(Board * b, int index){
+
+/*    int v = b->gameBoard[index].value;
+    #pragma omp critical
+    {
+        printf("[%d]I will sleep %d s [value:%d]\n", omp_get_thread_num(), index, v);
+    }
+    sleep(index+2);
+    #pragma omp critical
+    {
+        printf("[%d] [value:%d]v:%d s \n", omp_get_thread_num(), b->gameBoard[index].value, v);
+    }
+*/
+
+
+
+    //printf("[%d]@%d\n", omp_get_thread_num(), index );
+    if(END == TRUE){
+        return;
+    }
+
+    do{
+        index++;
+    }while(b->gameBoard[index].fixed == TRUE && index < b->size*b->size);   
+    //printf("[%d]got b[%d]=%d\n", omp_get_thread_num(), index, b->gameBoard[index-1].value);
+    if(index >= b->size*b->size){
+        printBoard(b);
+        END = TRUE;
+        return;
+    }
+    
+    for(char value = 1; value <= b->size; value++){
+        if(checkValidity(b, index, value)){
+           // printf("[%d]Created b[%d]=%d\n", omp_get_thread_num(), index, value);
+            b->gameBoard[index].value = value;
+            updateMasks(b,index);
+            //task()
+            
+            #pragma omp task
+            {
+                //Board * n = copyBoard(b);
+                search(b, index);
+                //free(n);
+            }
+
+            #pragma omp taskwait
+            removeMasks(b,index);
+        }
+
+        if(END == TRUE){
+            return;
+        }
+        
+    }
+    return;
+}
+
+
+int solver(Board *b)
+{
+    
+    int size = b->size;
+
+    omp_set_num_threads(1);
+
+    int index = 0;
+    
+    while(b->gameBoard[index].fixed == TRUE && index < b->size*b->size){
+        index++;
+    }
+    
+    
+    #pragma omp parallel shared(END,b) firstprivate(index, size)
+    {
+
+        #pragma omp for schedule(dynamic)
+        for(char value = 1; value <= size ; value++){
+
+            if(checkValidity(b, index, value) == TRUE){
+                printf("[%d]Created b[%d]=%d\n", omp_get_thread_num(), index, value);
+                
+                //task()
+                #pragma omp task
+                {
+                    Board * newB = copyBoard(b);
+                    
+                    newB->gameBoard[index].value = value;
+
+                    updateMasks(newB,index);
+                    
+                    search(newB, index);
+                    
+                    freeBoard(newB);
+                    
+                }
+                
+            }
+
+            // CHECK VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
+        }
+    
+    }   
+
+    return END;
+
+}
+
+
 int makeGuess(Board *b, int i){
 
     removeMasks(b, i);
@@ -22,176 +130,6 @@ int makeGuess(Board *b, int i){
     }
     return FALSE;
 }
-
-void fillQueue(Queue *q, Board *b, int bottom, int level)
-{
-    int i = 0;
-
-    bottom = (bottom > 4)? 4: bottom;
-    
-    if(bottom == b->size*b->size)
-    {
-        return;
-    }   
-    if(b->gameBoard[level].fixed == FALSE)
-    {
-        for(i = 1; i <= b->size; i++)
-        {
-
-            if(checkValidity(b, level, i) == TRUE)
-            {
-                b->gameBoard[level].value = i;
-                updateMasks(b, level);
-                if(level < bottom )
-                {
-                    fillQueue(q, b, bottom, level+1);
-                }
-                else
-                {
-                    //ver copy
-                    if(push(b, q, level) == 0)
-                    {
-                        printf("Failed to push\n");
-                    }
-                }
-                removeMasks(b, level);
-                //b->gameBoard[level].value = old;
-            }
-        }
-        b->gameBoard[level].value = 0;
-    }
-    else
-    {
-        fillQueue(q, b, bottom+1, level+1);   
-    }                 
-}
-
-void search(Board * b, int index){
-    
-    
- /*   if(){
-        int v = b->gameBoard[0].value;
-        #pragma omp critical
-        //printf("[%d]will sleep:%d[%d]\n",omp_get_thread_num(), s , b->gameBoard[0].value);
-        sleep(index +4 );
-        #pragma omp critical
-        {
-            printf("[%d]-%d\n",omp_get_thread_num(),v);
-            //printBoard(b);
-        }
-    }*/
-    
-    if(END == TRUE){
-        return;
-    }
-
-
-    do{
-        index++;
-    }while(b->gameBoard[index].fixed == TRUE && index < b->size*b->size);   
-    //printf("[%d]got b[%d]=%d\n", omp_get_thread_num(), index, b->gameBoard[index-1].value);
-    if(index == b->size*b->size){
-        printBoard(b);
-        END = TRUE;
-        return;
-    }
-    
-    for(char value = 1; value <= b->size; value++){
-        if(checkValidity(b, index, value)){
-           // printf("[%d]Created b[%d]=%d\n", omp_get_thread_num(), index, value);
-            b->gameBoard[index].value = value;
-            updateMasks(b,index);
-            //task()
-            
-            #pragma omp task
-                search(b, index);
-
-            
-        }
-
-        if(END == TRUE){
-            return;
-        }
-        #pragma omp taskwait
-        removeMasks(b,index);
-        
-    }
-    return;
-    
-}
-
-
-int solver(Board *b)
-{
-    
-    int size = b->size;
-
-    omp_set_num_threads(4);
-
-    int index = 0;
-    
-    while(b->gameBoard[index].fixed == TRUE && index < b->size*b->size){
-        index++;
-    }
-    Board * newB = NULL;
-    
-    #pragma omp parallel shared(END, b) firstprivate(index, size, newB)
-    {
-
-        newB = copyBoard(b);
-
-        #pragma omp for
-        for(char value = 1; value <= size; value++){
-
-            if(checkValidity(newB, index, value) == TRUE){
-                //printf("[%d]Created b[%d]=%d\n", omp_get_thread_num(), index, value);
-                newB->gameBoard[index].value = value;
-                updateMasks(newB,index);
-                
-                //task()
-                #pragma omp task
-                    search(newB, index);        
-            
-                
-            }
-
-            // CHECK VVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV
-            #pragma omp taskwait
-            removeMasks(newB,index);
-        }
-    
-    }   
-
-    return END;
-
-}
-
-/*
-int parallelSolver(Board * b){
-
-    //create Stack
-	Queue * stack = create(9);
-	int original;
-	int i = 0;
-
-	while(i < b->size*b->size && b->gameBoard[i].fixed == TRUE){
-		i++;
-	}
-
-	if(b->gameBoard[i].fixed == FALSE){
-		// Save original value??
-		original = b->gameBoard[i].value;
-		// Put Boards on Stack, only with this [i].value changed
-		while(!full(stack) && b->gameBoard[i].value++ <= b->size ){
-
-			push(b, stack, -1);
-		}
-	}
-	printStack(stack);
-	return 0;
-
-}*/
-
 
 int bruteforce(Board *b, int start){
 
