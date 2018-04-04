@@ -23,38 +23,36 @@ void fillQueue(Queue *q, Board *b, int bottom, int level)
 {
     int i = 0;
 
-    bottom = (bottom > 4)? 4: bottom;
-    
-    if(bottom == b->size*b->size)
-    {
+    if(level > bottom || level >= b->size*b->size){
         return;
-    }   
+    }
+
+    if(level == bottom)
+    {
+        //ver copy
+        if(push(b, q, level) == 0)
+        {
+            printf("Failed to push\n");
+        }
+        return;
+    }
+
     if(b->gameBoard[level].fixed == FALSE)
     {
         for(i = 1; i <= b->size; i++)
         {
-
             if(checkValidity(b, level, i) == TRUE)
             {
                 b->gameBoard[level].value = i;
                 updateMasks(b, level);
-                if(level < bottom )
+                if(level < bottom)
                 {
                     fillQueue(q, b, bottom, level+1);
                 }
-                else
-                {
-                    //ver copy
-                    if(push(b, q, level) == 0)
-                    {
-                        printf("Failed to push\n");
-                    }
-                }
                 removeMasks(b, level);
-                //b->gameBoard[level].value = old;
+                b->gameBoard[level].value = 0;
             }
         }
-        b->gameBoard[level].value = 0;
     }
     else
     {
@@ -73,6 +71,7 @@ int solver(Board *b)
     printQueue(mainQ);
     printf("Size: %d\n", mainQ->size);
     
+    omp_set_num_threads(4);
 
     #pragma omp parallel shared(mainQ, solFound)
     {
@@ -141,7 +140,6 @@ int solver(Board *b)
                                 }while (i >= index && (currBoard->gameBoard[i].fixed == TRUE || currBoard->gameBoard[i].value == currBoard->size));
 
                                 if((i <= index && currBoard->gameBoard[i].value == currBoard->size) || solFound == TRUE){
-                                    free(currBoard);
                                     result = FALSE;
                                     break;
                                 }
