@@ -1,7 +1,7 @@
 #include <omp.h>
 #include "strategies.h"
 
-int activeThreads = 0;
+int activeThreads = 1;
 int END = 0;
 
 int makeGuess(Board *b, int i){
@@ -24,15 +24,20 @@ int makeGuess(Board *b, int i){
 
 int workNeeded()
 {   
+    
     int ret = FALSE;
     #pragma omp critical(work)
     {
-        if(activeThreads < omp_get_num_threads()*2){
+        if(activeThreads <= omp_get_num_threads()){
+            //printf(">>>>>>>>>>>>>>>>>>>%d\n", activeThreads);
             activeThreads++;
             ret = TRUE;
         }
     }
     return ret;
+
+//    return activeThreads < omp_get_num_threads();
+
 }
 
 int taskBruteForce(Board *b, int start)
@@ -41,7 +46,7 @@ int taskBruteForce(Board *b, int start)
 
     #pragma omp critical(print)
     {
-        printf("%d@[%d]\n",omp_get_thread_num(),start);
+        printf("Taks:%d@[%d]\n",omp_get_thread_num(),start);
         printBoard(b);
     }
     /*#pragma omp atomic
@@ -64,15 +69,16 @@ int taskBruteForce(Board *b, int start)
         if(b->gameBoard[i].fixed == FALSE)
         {
             //check if there's work for all threads
-            if(( (i % b->size) == 0 && workNeeded()))
+            if( /*i > 100 && i < 150 && */workNeeded())
             {
                 if((valid = makeGuess(b, i)) == TRUE)
                 {
-                    #pragma omp critical (print)
+                    /*#pragma omp critical (print)
                     {
                         printf("WOOOORk\n");
                         printf("%d->%d@%d\n", omp_get_thread_num(), b->gameBoard[i].value, i);
-                    }
+                    }*/
+
                     Board *new = copyBoard(b);
                     #pragma omp task
                     {
@@ -87,10 +93,6 @@ int taskBruteForce(Board *b, int start)
             {
                 // Backtrack
                 do{
-                    if(END == TRUE)
-                    {
-                        return TRUE;
-                    }
 
                     // Erasing supposed values in the way back
                     if(b->gameBoard[i].fixed == FALSE)
@@ -106,8 +108,9 @@ int taskBruteForce(Board *b, int start)
 
                 if(i < start)
                 {
+
                     #pragma omp atomic
-                    activeThreads--;
+                        activeThreads--;
                     //printf("ACTIVE SAI: %d\n", activeThreads);
                     
                     return FALSE;
@@ -128,16 +131,38 @@ int taskBruteForce(Board *b, int start)
 
 int solver(Board *b)
 {    
-
-    #pragma omp parallel shared(activeThreads, b)
+    int tabs = 0;
+    #pragma omp parallel shared(activeThreads, b, tabs)
     {
         #pragma omp master
             printf("THREADS: %d\n", omp_get_num_threads());
 
-        Board *currBoard = copyBoard(b);
 
+        Board *new = copyBoard(b);
         #pragma omp single
-        taskBruteForce(currBoard, 0);
+            taskBruteForce(new, 0);
+
+        /*#pragma omp for schedule( dynamic ) reduction(+:tabs)
+        for (int i = 1; i <= b->size; i++)
+        {
+            Board *new = copyBoard(b);
+
+            //////////////////////////////////////////////////ERROOOO
+             if(checkValidity(new, 0, i) == TRUE){
+                new->gameBoard[0].value = i;
+                updateMasks(new, 0);
+                #pragma omp task
+                {
+                    taskBruteForce(new, 1);
+                    freeBoard(new);
+                    free(new);
+                }
+                tabs++;
+            }
+        }
+        #pragma omp single
+            activeThreads = tabs;
+            */
     }
 
     return 0;
