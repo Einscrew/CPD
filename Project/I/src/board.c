@@ -127,6 +127,9 @@ int checkAllBoard(Board *b)
 void freeBoard(Board *b)
 {
     free(b->gameBoard);
+    free(b->rowMask);
+    free(b->colMask);
+    free(b->boxMask);
 }
 
 /* Creates a vector of possibilities for each cell that has a value != 0 */
