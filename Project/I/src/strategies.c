@@ -65,17 +65,19 @@ int solver(Board *b)
     Queue *mainQ = create();
     int solFound = FALSE;
     
-    //fillQueue(mainQ, b, 1, 0);
-    push(b, mainQ, 0);
+    fillQueue(mainQ, b, 0, 0);
+    //push(b, mainQ, 0);
    
-    printQueue(mainQ);
     printf("Size: %d\n", mainQ->size);
     
+
     omp_set_num_threads(1);
 
-    #pragma omp parallel shared(mainQ, solFound)
+    int finished = 0, flagStop = 0;    
+
+    #pragma omp parallel shared(mainQ, solFound, finished, flagStop)
     {
-        #pragma omp master
+        #pragma omp single
             printf("THREADS: %d\n", omp_get_num_threads());
 
         Board *currBoard = NULL;
@@ -84,48 +86,42 @@ int solver(Board *b)
         int index = 0, i= 0, valid = FALSE;  
         int threshold = 4;
 
-        while(solFound == FALSE)
+
+        while(solFound == FALSE && finished < numThreads)
         {
+            
             #pragma omp critical (updateQueue)
             {
                 currBoard = pop(mainQ, &index);
-                
-                if(currBoard != NULL){
-                    /*#pragma omp critical
-                    {
-                            printf("[%d] popped\n", omp_get_thread_num());// (currBoard == NULL)?'Y':'N');
-                            printBoard(currBoard); 
-                    }*/
-                }
+                //printf("Size pop: %d\n", mainQ->size);
             }
-
-            if(currBoard != NULL){
-            
-                if(index >= threshold){
+ 
+            if(currBoard != NULL)
+            {
+                if(index >= threshold)
+                {
 
                     /*#pragma omp critical
                     {
                         printf("brut %d\n", omp_get_thread_num());
                         printBoard(currBoard);
                     }*/
-                    //result = bruteforce(currBoard, index+1);
+                    //result = bruteforce(currBoard, intdex+1);
                     index++;
 
-
-                    for(i = index; i < currBoard->size*currBoard->size ; i++){
-                        //printf("%d\n", i);
-
+                    for(i = index; i < currBoard->size*currBoard->size ; i++)
+                    {
                         if(valid == FALSE)
                         {
                             i--;
                             valid = TRUE;
                         }
                         // For non fixed values:
-                        if(currBoard->gameBoard[i].fixed == FALSE){
-                            
+                        if(currBoard->gameBoard[i].fixed == FALSE)
+                        {                           
                             // No more alternatives
-                            if((valid = makeGuess(currBoard, i)) == FALSE){
-
+                            if((valid = makeGuess(currBoard, i)) == FALSE)
+                            {
                                 // Backtrack
                                 do{
                                     // Erasing supposed values in the way back
@@ -137,16 +133,34 @@ int solver(Board *b)
                                     }
 
                                     i--;
+
                                 }while (i >= index && (currBoard->gameBoard[i].fixed == TRUE || currBoard->gameBoard[i].value == currBoard->size));
 
                                 if(i < index || solFound == TRUE){
+
+                                if((i <= index && currBoard->gameBoard[i].value == currBoard->size) || solFound == TRUE)
+                                {
+                                    if(solFound == FALSE && flagStop == 1)
+                                    {
+                                        #pragma omp critical
+                                        {
+                                            finished++;
+                                           /*
+                                            printf("Acabou o trabalho %d\n", omp_get_thread_num());
+                                            printf("finished: %d\n", finished);
+                                            printf("numThreads: %d\n", numThreads);
+                                            */
+                                        }
+                                    }
                                     result = FALSE;
                                     break;
                                 }
                             }
                         }
                     }
-                    if(i == currBoard->size*currBoard->size){
+
+                    if(i == currBoard->size*currBoard->size && valid == TRUE)
+                    {
                         result = TRUE;
                     }
                     
@@ -155,19 +169,24 @@ int solver(Board *b)
                     if(result == TRUE){
                         #pragma omp critical
                         {
-                            printf("EHEHEHindex:%d-%d [%d]\n",index ,threshold , omp_get_thread_num());
+                            printf("SOLUTION index:%d-%d [%d]\n",index ,threshold , omp_get_thread_num());
                             printBoard(currBoard);
                         }
+                        freeBoard(currBoard);
                         free(currBoard);
                         break;
                     }
+                    
                 }
-                else{
+                else
+                {
                     // Looks for the next empty cell 
-                    while(currBoard->gameBoard[index].fixed == TRUE && index < currBoard->size*currBoard->size){
+                    while(currBoard->gameBoard[index].fixed == TRUE && index < currBoard->size*currBoard->size)
+                    {
                         index++;
                         threshold++;
-                        if(index == currBoard->size * currBoard->size){
+                        if(index == currBoard->size * currBoard->size)
+                        {
                             break;
                         }
 
@@ -184,9 +203,7 @@ int solver(Board *b)
                     //printf("AAAAAAAAAAAAAA[%d]\n", index);
                     
                     //printBoard(currBoard);
-                    fillQueue(privQ, currBoard, index + currBoard->squareSize, index);
-
-                    free(currBoard);
+                    fillQueue(privQ, currBoard, threshold, index);
                     #pragma omp critical (updateQueue)
                     {
                         merge(mainQ, privQ);
@@ -194,9 +211,20 @@ int solver(Board *b)
                     
                 }  
 
+                freeBoard(currBoard);
+                free(currBoard);
             }
         }
+        destroy(privQ);
     }
+
+    destroy(mainQ);
+
+    if(solFound == FALSE)
+    {
+        printf("There's no solution for the given sudoku!\n");
+    }
+
 
     return 0;
 
