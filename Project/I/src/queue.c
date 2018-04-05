@@ -113,6 +113,7 @@ void destroyElem(Elem * e){
 void destroy(Queue *q){
 
 	destroyElem(q->head);
+	
 
 	free(q);
 }

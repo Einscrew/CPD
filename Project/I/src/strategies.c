@@ -1,6 +1,8 @@
 #include <omp.h>
 #include "strategies.h"
 
+
+
 int makeGuess(Board *b, int i){
 
     removeMasks(b, i);
@@ -68,10 +70,8 @@ int solver(Board *b)
     //fillQueue(mainQ, b, 1, 0);
     push(b, mainQ, 0);
    
-    printQueue(mainQ);
     printf("Size: %d\n", mainQ->size);
     
-    omp_set_num_threads(4);
 
     #pragma omp parallel shared(mainQ, solFound)
     {
@@ -81,7 +81,7 @@ int solver(Board *b)
         Board *currBoard = NULL;
         Queue *privQ = create();
         int result = FALSE;
-        int index = 0, i= 0, valid;  
+        int index = 0, i= 0, valid=FALSE;  
         int threshold = 4;
 
         while(solFound == FALSE)
@@ -155,9 +155,9 @@ int solver(Board *b)
                     if(result == TRUE){
                         #pragma omp critical
                         {
-                            printf("EHEHEHindex:%d-%d [%d]\n",index ,threshold , omp_get_thread_num());
                             printBoard(currBoard);
                         }
+                        freeBoard(currBoard);
                         free(currBoard);
                         break;
                     }
@@ -185,19 +185,20 @@ int solver(Board *b)
                     
                     //printBoard(currBoard);
                     fillQueue(privQ, currBoard, index + currBoard->squareSize, index);
-
-                    free(currBoard);
                     #pragma omp critical (updateQueue)
                     {
                         merge(mainQ, privQ);
                     }
                     
                 }  
+                freeBoard(currBoard);
+                free(currBoard);
 
             }
         }
+        destroy(privQ);
     }
-
+    destroy(mainQ);    
     return 0;
 
 }

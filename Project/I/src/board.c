@@ -127,6 +127,9 @@ int checkAllBoard(Board *b)
 void freeBoard(Board *b)
 {
     free(b->gameBoard);
+    free(b->rowMask);
+    free(b->colMask);
+    free(b->boxMask);
 }
 
 /* Creates a vector of possibilities for each cell that has a value != 0 */
@@ -153,7 +156,6 @@ int fillGameBoard(Board *board, char const* file)
         else if(board->squareSize <= MAX_SQUARE_SIZE && board->squareSize >= MIN_SQUARE_SIZE)
         {
             board->size = board->squareSize*board->squareSize;
-            printf("%d[%lu] %d[%lu]\n",board->size, sizeof(board->size), board->squareSize, sizeof(board->squareSize) );
 
             if(allocBoard(board) != 0)
             {
@@ -172,6 +174,7 @@ int fillGameBoard(Board *board, char const* file)
         if(line == NULL)
         {
             printf("Error on malloc!\n");
+            freeBoard(board);
             fclose(fptr);
             return -1;
         }
@@ -208,6 +211,8 @@ int fillGameBoard(Board *board, char const* file)
                 else
                 {
                     printf("There is an invalid number on the board game, check the file!\n");
+                    free(line);
+                    freeBoard(board);
                     fclose(fptr);
                     return -1;
                 }
