@@ -71,7 +71,7 @@ int solver(Board *b)
     printQueue(mainQ);
     printf("Size: %d\n", mainQ->size);
     
-    omp_set_num_threads(4);
+    omp_set_num_threads(1);
 
     #pragma omp parallel shared(mainQ, solFound)
     {
@@ -81,7 +81,7 @@ int solver(Board *b)
         Board *currBoard = NULL;
         Queue *privQ = create();
         int result = FALSE;
-        int index = 0, i= 0, valid;  
+        int index = 0, i= 0, valid = FALSE;  
         int threshold = 4;
 
         while(solFound == FALSE)
@@ -139,7 +139,7 @@ int solver(Board *b)
                                     i--;
                                 }while (i >= index && (currBoard->gameBoard[i].fixed == TRUE || currBoard->gameBoard[i].value == currBoard->size));
 
-                                if((i <= index && currBoard->gameBoard[i].value == currBoard->size) || solFound == TRUE){
+                                if(i < index || solFound == TRUE){
                                     result = FALSE;
                                     break;
                                 }
