@@ -1,5 +1,6 @@
 CC=gcc
 FLAGS=-g -Wall
+#FLAGS=-O3
 EXTRA=-fopenmp
 
 I: main.o strategies.o queue.o board.o utils.o

@@ -68,21 +68,18 @@ int solver(Board *b)
     //fillQueue(mainQ, b, 1, 0);
     push(b, mainQ, 0);
    
-    printQueue(mainQ);
     printf("Size: %d\n", mainQ->size);
-    
-    omp_set_num_threads(4);
 
     #pragma omp parallel shared(mainQ, solFound)
     {
-        #pragma omp master
+        #pragma omp single
             printf("THREADS: %d\n", omp_get_num_threads());
 
         Board *currBoard = NULL;
         Queue *privQ = create();
         int result = FALSE;
-        int index = 0, i= 0, valid;  
-        int threshold = 4;
+        int index = 0, i= 0, valid = FALSE;  
+        int threshold = 1;
 
         while(solFound == FALSE)
         {
@@ -108,7 +105,7 @@ int solver(Board *b)
                         printf("brut %d\n", omp_get_thread_num());
                         printBoard(currBoard);
                     }*/
-                    //result = bruteforce(currBoard, index+1);
+                    //result = bruteforce(currBoard, intdex+1);
                     index++;
 
 
@@ -155,12 +152,14 @@ int solver(Board *b)
                     if(result == TRUE){
                         #pragma omp critical
                         {
-                            printf("EHEHEHindex:%d-%d [%d]\n",index ,threshold , omp_get_thread_num());
+                            printf("EHEHEH index:%d-%d [%d]\n",index ,threshold , omp_get_thread_num());
                             printBoard(currBoard);
                         }
+                        freeBoard(currBoard);
                         free(currBoard);
                         break;
                     }
+                    
                 }
                 else{
                     // Looks for the next empty cell 
@@ -186,7 +185,7 @@ int solver(Board *b)
                     //printBoard(currBoard);
                     fillQueue(privQ, currBoard, index + currBoard->squareSize, index);
 
-                    free(currBoard);
+                    
                     #pragma omp critical (updateQueue)
                     {
                         merge(mainQ, privQ);
@@ -194,10 +193,14 @@ int solver(Board *b)
                     
                 }  
 
+                freeBoard(currBoard);
+                free(currBoard);
             }
         }
+        destroy(privQ);
     }
 
+    destroy(mainQ);
     return 0;
 
 }
