@@ -2,6 +2,7 @@
 #include "strategies.h"
 
 int activeThreads = 0;
+int END = 0;
 
 int makeGuess(Board *b, int i){
 
@@ -26,15 +27,21 @@ int workNeeded()
     return activeThreads < omp_get_num_threads();
 }
 
-
 int taskBruteForce(Board *b, int start)
 {
     int i = 0, valid = TRUE;
 
+    #pragma omp atomic
     activeThreads++;
+    //printf("ACTIVE ENTRA: %d\n", activeThreads);  
 
     for(i = start; i < b->size*b->size; i++)
     {
+        if(END == TRUE)
+        {
+            return TRUE;
+        }
+
         if(valid == FALSE)
         {
             i--;
@@ -44,14 +51,16 @@ int taskBruteForce(Board *b, int start)
         if(b->gameBoard[i].fixed == FALSE)
         {
             //check if there's work for all threads
-            if((i % b->squareSize) == 0 && workNeeded())
+            if(/*(i % b->squareSize) == 0 && */workNeeded())
             {
                 if((valid = makeGuess(b, i)) == TRUE)
                 {
+                    Board *new = copyBoard(b);
                     #pragma omp task
                     {
-                        Board *new = copyBoard(b);
                         taskBruteForce(new, i+1);
+                        freeBoard(new);
+                        free(new);
                     }
                 }
             } 
@@ -69,13 +78,15 @@ int taskBruteForce(Board *b, int start)
                     }
 
                     i--;
+
                 }while (i >= start && (b->gameBoard[i].fixed == TRUE || b->gameBoard[i].value == b->size));
 
-                if(i <= start && b->gameBoard[i].value == b->size)
+                if(i < start)
                 {
+                    #pragma omp atomic
                     activeThreads--;
-                    freeBoard(b);
-                    free(b);
+                    //printf("ACTIVE SAI: %d\n", activeThreads);
+                    
                     return FALSE;
                 }
             }
@@ -84,14 +95,11 @@ int taskBruteForce(Board *b, int start)
 
     #pragma omp critical
     {
+        END = TRUE;
         printf("Thread: %d\n", omp_get_thread_num());   
         printBoard(b);
     }
     
-    //SOLUTION FOUND
-    freeBoard(b);
-    free(b);
-
     return TRUE;
 }
 
