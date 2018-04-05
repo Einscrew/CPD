@@ -12,15 +12,7 @@ int main(int argc, char const *argv[]) {
             board = (Board*)malloc(sizeof(Board));
             if((fillGameBoard(board, argv[1])) == 0)
             {
-            	//printf("Valid: %d\n",checkValidity(board, 0, 1));
-                //printf("Solution?%d\n", bruteforce(board, 5));
-                //printf("Solution?%d\n", checkValidity(board, 0, 1));
-                solver(board);
-               // printBoard(board);
- 
-                    //testStack(board);
-               // parallelSolver(board);
-                 //Already frees board ?????
+            	solver(board);              
                 freeBoard(board);
             }
             free(board);

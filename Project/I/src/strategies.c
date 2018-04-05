@@ -105,7 +105,7 @@ int taskBruteForce(Board *b, int start)
 
 int solver(Board *b)
 {    
-    omp_set_num_threads(4);
+    omp_set_num_threads(1);
 
     #pragma omp parallel shared(activeThreads, b)
     {

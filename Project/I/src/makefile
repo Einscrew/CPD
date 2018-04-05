@@ -2,20 +2,14 @@ CC=gcc
 FLAGS=-g -Wall
 EXTRA=-fopenmp
 
-I: main.o strategies.o queue.o board.o utils.o
+I: main.o strategies.o  board.o utils.o
 	$(CC) -o $@ $^ $(FLAGS) $(EXTRA)
 
 main.o: main.c strategies.h
 	$(CC) -c $^ $(FLAGS) $(EXTRA)
 
-strategies.o: strategies.c queue.h board.h
+strategies.o: strategies.c board.h
 	$(CC) -c $^ $(FLAGS) $(EXTRA)
-
-queue.o: queue.c board.h
-	$(CC) -c $^ $(FLAGS) $(EXTRA)
-
-#stack.o: stack.c board.h
-#	$(CC) -c $^ $(FLAGS) $(EXTRA)	
 
 board.o: board.c utils.h
 	$(CC) -c $^ $(FLAGS) $(EXTRA)
