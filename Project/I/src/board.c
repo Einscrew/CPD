@@ -37,14 +37,15 @@ Board * copyBoard(Board * original){
 
     allocBoard(new);
     
-    
-    for(int i = 0 ; i < original->size*original->size ; i++){
-        new->gameBoard[i].value = original->gameBoard[i].value;
-        new->gameBoard[i].fixed = original->gameBoard[i].fixed;
-        
-        new->rowMask[row(i, original->size)] = original->rowMask[row(i, original->size)];
-        new->colMask[col(i, original->size)] = original->colMask[col(i, original->size)];
-        new->boxMask[box(i, original->squareSize)] = original->boxMask[box(i, original->squareSize)];
+    if(){
+        for(int i = 0 ; i < original->size*original->size ; i++){
+            new->gameBoard[i].value = original->gameBoard[i].value;
+            new->gameBoard[i].fixed = original->gameBoard[i].fixed;
+            
+            new->rowMask[row(i, original->size)] = original->rowMask[row(i, original->size)];
+            new->colMask[col(i, original->size)] = original->colMask[col(i, original->size)];
+            new->boxMask[box(i, original->squareSize)] = original->boxMask[box(i, original->squareSize)];
+        }       
     }
     return new;
 }
@@ -132,6 +133,9 @@ int checkAllBoard(Board *b)
 void freeBoard(Board *b)
 {
     free(b->gameBoard);
+    free(b->rowMask);
+    free(b->colMask);
+    free(b->boxMask);
 }
 
 /* Creates a vector of possibilities for each cell that has a value != 0 */

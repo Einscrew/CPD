@@ -88,9 +88,19 @@ void createTask(Board *b, int level, int bottom)
             }
             else
             {
-                // task()
                 #pragma omp task
-                search(b, level);
+                {
+                    Board * newB = copyBoard(b);
+                    if(newB == NULL){
+                        printf("ERRO\n");
+                    }
+                    updateMasks(newB,level);
+                    
+                    search(newB, level);
+                    
+                    freeBoard(newB);
+                    free(newB);
+                }
             }
             removeMasks(b, level);
             //b->gameBoard[level].value = old;
@@ -139,13 +149,13 @@ int solver(Board *b)
     {
 
         #pragma omp for schedule(dynamic)
-        for(char value = 1; value <= size ; value++){
+        for(int value = 1; value <= size ; value++){
 
             if(checkValidity(b, index, value) == TRUE){
                 printf("[%d]Created b[%d]=%d\n", omp_get_thread_num(), index, value);
                 
                 //task()
-                #pragma omp task untied
+                #pragma omp task
                 {
                     Board * newB = copyBoard(b);
                     
@@ -156,6 +166,7 @@ int solver(Board *b)
                     search(newB, index);
                     
                     freeBoard(newB);
+                    free(newB);
                     
                 }
                 
