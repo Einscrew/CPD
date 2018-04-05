@@ -84,27 +84,7 @@ void printMask(int n, int c){
     printf("\t");
 }                   
 int checkValidity(Board *b, int index, int value){
-    //int v = b->gameBoard[index].value;
-    /*for (int i = 0; i < l*l; ++i) {
-        printf("[%d]Row: ",i);
-        printMask(b->rowMask[i], l*l);
-        printf(" Col: ");
-        printMask(b->colMask[i], l*l);
-        printf("Box: ");
-        printMask(b->boxMask[i], l*l);
-        printf("\n");
-    }*/
-   /* printf("Trying %d\n", value);
-    printMask(b->rowMask[row(index,l*l)], l*l);
-    printf(" %d\n", valid(value,b->rowMask[row(index+1,l*l)]));
 
-    printMask(b->colMask[col(index,l*l)], l*l);
-    printf(" %d\n",valid(value,b->colMask[col(index+1,l*l)]));
-
-    printMask(b->boxMask[box(index,l)], l*l);
-    printf(" %d\n",valid(value,b->boxMask[box(index,l)]));
-
-*/
     int l = b->squareSize, totalMask, ret;
     int r = row(index,(l*l)), c = col(index,(l*l)), bo = box(index,l);
 
@@ -123,10 +103,12 @@ int checkAllBoard(Board *b)
     return TRUE;
 }
 
-
 void freeBoard(Board *b)
 {
     free(b->gameBoard);
+    free(b->rowMask);
+    free(b->colMask);
+    free(b->boxMask);
 }
 
 /* Creates a vector of possibilities for each cell that has a value != 0 */
@@ -225,37 +207,19 @@ int fillGameBoard(Board *board, char const* file)
 }
 
 
-
 /* Prints the game board */
 void printBoard(Board *b)
 {
     int i = 0;
-    //int k = 0;
-
-    /*printf("| " );
-    for(k = 0; k <= b->size+ +1   ; k++){
-        printf("- ");
-    }
-    printf("|\n| " );*/
+    
     for(i = 0; i < b->size*b->size; i++)
     {
         printf("%d ", b->gameBoard[i].value);
 
-        /*if ((i+1)%b->squareSize == 0) {
-            printf("| " );
-        }*/
         if((i+1)%(b->size) == 0){
 
             printf("\n");
         }
-        /*
-        if((i+1)%(b->size * b->squareSize) == 0) {
-            for(k = 0; k <= b->size+ +1   ; k++){
-                printf("- ");
-            }
-            printf("|\n| " );
-        }*/
-
     }
     printf("\n" );
 }
