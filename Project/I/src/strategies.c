@@ -23,16 +23,29 @@ int makeGuess(Board *b, int i){
 }
 
 int workNeeded()
-{
-    return activeThreads < omp_get_num_threads();
+{   
+    int ret = FALSE;
+    #pragma omp critical(work)
+    {
+        if(activeThreads < omp_get_num_threads()*2){
+            activeThreads++;
+            ret = TRUE;
+        }
+    }
+    return ret;
 }
 
 int taskBruteForce(Board *b, int start)
 {
     int i = 0, valid = TRUE;
 
-    #pragma omp atomic
-    activeThreads++;
+    #pragma omp critical(print)
+    {
+        printf("%d@[%d]\n",omp_get_thread_num(),start);
+        printBoard(b);
+    }
+    /*#pragma omp atomic
+        activeThreads++;*/
     //printf("ACTIVE ENTRA: %d\n", activeThreads);  
 
     for(i = start; i < b->size*b->size; i++)
@@ -51,10 +64,15 @@ int taskBruteForce(Board *b, int start)
         if(b->gameBoard[i].fixed == FALSE)
         {
             //check if there's work for all threads
-            if(/*(i % b->squareSize) == 0 && */workNeeded())
+            if(( (i % b->size) == 0 && workNeeded()))
             {
                 if((valid = makeGuess(b, i)) == TRUE)
                 {
+                    #pragma omp critical (print)
+                    {
+                        printf("WOOOORk\n");
+                        printf("%d->%d@%d\n", omp_get_thread_num(), b->gameBoard[i].value, i);
+                    }
                     Board *new = copyBoard(b);
                     #pragma omp task
                     {
@@ -69,6 +87,11 @@ int taskBruteForce(Board *b, int start)
             {
                 // Backtrack
                 do{
+                    if(END == TRUE)
+                    {
+                        return TRUE;
+                    }
+
                     // Erasing supposed values in the way back
                     if(b->gameBoard[i].fixed == FALSE)
                     {
@@ -93,7 +116,7 @@ int taskBruteForce(Board *b, int start)
         }
     }
 
-    #pragma omp critical
+    #pragma omp critical (print)
     {
         END = TRUE;
         printf("Thread: %d\n", omp_get_thread_num());   
@@ -105,7 +128,6 @@ int taskBruteForce(Board *b, int start)
 
 int solver(Board *b)
 {    
-    omp_set_num_threads(1);
 
     #pragma omp parallel shared(activeThreads, b)
     {
