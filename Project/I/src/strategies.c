@@ -4,6 +4,8 @@
 int activeThreads = 0;
 int END = 0;
 int flagStart = 0;
+int flagINI = 0;
+int numIniActiveThreads = 0;
 
 int makeGuess(Board *b, int i){
 
@@ -33,19 +35,15 @@ int taskBruteForce(Board *b, int start, int numThreads, int threshold)
     int i = 0, valid = TRUE;
 
     while(flagStart != b->size)
-    {
+    {}
 
+    if(flagINI == 0)
+    {
+        activeThreads = numIniActiveThreads;
+        flagINI = 1;
     }
 
-    #pragma omp atomic
-    activeThreads++;
-
-    printf("ACTIVE THREADS ENTRA: %d therad num: %d\n", activeThreads, omp_get_thread_num());
-    /*#pragma omp critical(print)
-    {
-        printf("Taks:%d@[%d]\n",omp_get_thread_num(),start);
-        printBoard(b);
-    }*/
+    //printf("ACTIVE THREADS ENTRA: %d therad num: %d\n", activeThreads, omp_get_thread_num());
     /*#pragma omp atomic
         activeThreads++;*/
     //printf("ACTIVE ENTRA: %d\n", activeThreads);  
@@ -72,6 +70,10 @@ int taskBruteForce(Board *b, int start, int numThreads, int threshold)
                 if((valid = makeGuess(b, i)) == TRUE)
                 {
                     Board *new = copyBoard(b);
+
+                    #pragma omp atomic
+                    activeThreads++;
+
                     #pragma omp task
                     {
                         taskBruteForce(new, i+1, numThreads, 0);
@@ -105,8 +107,8 @@ int taskBruteForce(Board *b, int start, int numThreads, int threshold)
                 if(i < start)
                 { 
                     #pragma omp atomic
-                        activeThreads--;
-                    //printf("ACTIVE SAI: %d therad num: %d\n", activeThreads, omp_get_thread_num());
+                    activeThreads--;
+                    printf("ACTIVE SAI: %d therad num: %d\n", activeThreads, omp_get_thread_num());
                     
                     return FALSE;
                 }
@@ -130,7 +132,6 @@ int taskBruteForce(Board *b, int start, int numThreads, int threshold)
 
 int solver(Board *b)
 {    
-    int tabs = 0;
     #pragma omp parallel shared(activeThreads, b, tabs)
     {
         /*Board *new = copyBoard(b);
@@ -150,6 +151,9 @@ int solver(Board *b)
 
              if(checkValidity(new, 0, i) == TRUE)
              {
+                #pragma omp atomic
+                numIniActiveThreads++;
+
                 printf("[%d]->%d@%d\n", omp_get_thread_num(), b->gameBoard[0].value, i);
                 new->gameBoard[0].value = i;
                 updateMasks(new, 0);
@@ -160,7 +164,6 @@ int solver(Board *b)
                     freeBoard(new);
                     free(new);
                 }
-                //tabs++;
             }
             else
             {
@@ -168,7 +171,8 @@ int solver(Board *b)
             }
 
             #pragma omp atomic
-                flagStart++;
+            flagStart++;
+            //printf("flagStart solver: %d\n", flagStart);
         }            
     }
 
