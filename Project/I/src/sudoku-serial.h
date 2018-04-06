@@ -1,5 +1,5 @@
-#ifndef STRATEGIES
-#define STRATEGIES
+#ifndef SUDOKU_SERIAL
+#define SUDOKU_SERIAL
 
 #include "board.h"
 

@@ -13,7 +13,7 @@ int allocBoard(Board *b)
         b->rowMask[i] = 0;
         b->colMask[i] = 0;
         b->boxMask[i] = 0;
-    }
+    }   
 
     if(b->gameBoard == NULL)
     {
