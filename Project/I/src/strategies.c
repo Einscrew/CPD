@@ -80,8 +80,8 @@ int solver(Board *b)
 
         Board *currBoard = NULL;
         Queue *privQ = create();
-        int result = FALSE;
-        int index = 0, i= 0, valid=FALSE;  
+        int result = TRUE;
+        int index = 0, i= 0, valid=TRUE;  
         int threshold = 4;
 
         while(solFound == FALSE)
@@ -89,13 +89,8 @@ int solver(Board *b)
             #pragma omp critical (updateQueue)
             {
                 currBoard = pop(mainQ, &index);
-                
                 if(currBoard != NULL){
-                    /*#pragma omp critical
-                    {
-                            printf("[%d] popped\n", omp_get_thread_num());// (currBoard == NULL)?'Y':'N');
-                            printBoard(currBoard); 
-                    }*/
+                    printf("index:%d size:%d\n", index, mainQ->size);
                 }
             }
 
@@ -109,7 +104,6 @@ int solver(Board *b)
                         printBoard(currBoard);
                     }*/
                     //result = bruteforce(currBoard, index+1);
-                    index++;
 
 
                     for(i = index; i < currBoard->size*currBoard->size ; i++){
@@ -146,13 +140,9 @@ int solver(Board *b)
                             }
                         }
                     }
-                    if(i == currBoard->size*currBoard->size){
-                        result = TRUE;
-                    }
-                    
-                    solFound = (result == TRUE)? TRUE: solFound;
 
                     if(result == TRUE){
+                        solFound = (result == TRUE)? TRUE: solFound;
                         #pragma omp critical
                         {
                             printBoard(currBoard);
@@ -172,19 +162,11 @@ int solver(Board *b)
                         }
 
                     }
-                    // Check if currBoard is the solution was found 
-                    if(index == currBoard->size * currBoard->size)
-                    {
-                        printf("AWINDACNK EDHQJSA\n");
-                        solFound = TRUE;
-                       // printBoard(currBoard);
-                        continue;
-                    }
 
                     //printf("AAAAAAAAAAAAAA[%d]\n", index);
                     
                     //printBoard(currBoard);
-                    fillQueue(privQ, currBoard, index + currBoard->squareSize, index);
+                    fillQueue(privQ, currBoard, index + 4, index);
                     #pragma omp critical (updateQueue)
                     {
                         merge(mainQ, privQ);
