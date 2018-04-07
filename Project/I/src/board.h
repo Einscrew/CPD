@@ -32,9 +32,9 @@ typedef struct Cell{
 typedef struct Board{
 
     Cell *gameBoard;
-    long int * rowMask;
-	long int * colMask;
-    long int * boxMask;	
+    long int /***/* rowMask;
+	long int /***/* colMask;
+    long int /***/* boxMask;	
     char size;
     char squareSize;
 
