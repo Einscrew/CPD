@@ -97,12 +97,6 @@ int checkValidity(Board *b, int index, int value){
     return ret;
 }
 
-/* Checks if there aren't any duplicate values in each row, column or box */
-int checkAllBoard(Board *b)
-{
-    return TRUE;
-}
-
 void freeBoard(Board *b)
 {
     free(b->gameBoard);
