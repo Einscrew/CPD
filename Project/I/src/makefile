@@ -2,14 +2,16 @@ CC=gcc
 FLAGS=-g -Wall
 EXTRA=-fopenmp
 
-sudoku-omp: sudoku-omp.o  board.o
+NAME=sudoku-omp
+
+$(NAME): $(NAME).o  board.o
 	$(CC) -o $@ $^ $(FLAGS) $(EXTRA)
 
-sudoku-omp.o: sudoku-omp.c board.h
+$(NAME).o: $(NAME).c board.h
 	$(CC) -c $^ $(FLAGS) $(EXTRA)
 
 board.o: board.c
 	$(CC) -c $^ $(FLAGS) $(EXTRA)
 
 clean:
-	rm -f *.*o *.h.gch sudoku-omp
+	rm -f *.*o *.h.gch $(NAME)
