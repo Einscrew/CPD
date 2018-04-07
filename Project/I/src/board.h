@@ -3,7 +3,7 @@
 
 #define MAX_SQUARE_SIZE 9 /* Max value of l */
 #define MIN_SQUARE_SIZE 2 /* Min value of l */
-#define MAX 100
+#define MAX 200
 #define TRUE 1
 #define FALSE 0
 
@@ -32,9 +32,9 @@ typedef struct Cell{
 typedef struct Board{
 
     Cell *gameBoard;
-    long int /***/* rowMask;
-	long int /***/* colMask;
-    long int /***/* boxMask;	
+    long int ** rowMask;
+	long int ** colMask;
+    long int ** boxMask;	
     char size;
     char squareSize;
 
@@ -47,11 +47,13 @@ Board * copyBoard(Board* original);
 void updateMasks(Board * b, int i);
 void removeMasks(Board * b, int i);
 
+void printMask(int n, int c);
 int checkValidityMasks(Board * b, int size, int value);
 void freeBoard(Board *b);
 
 
 int fillGameBoard(Board *b, char const* file);
 void printBoard(Board * b);
+void printFixed(Board *b);
 
 #endif

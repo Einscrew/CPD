@@ -23,6 +23,7 @@ int makeGuess(Board *b, int i){
     {
 
         if(checkValidityMasks(b, i, value) == TRUE){
+            
             b->gameBoard[i].value = value;
             updateMasks(b, i);
             return TRUE;
@@ -59,8 +60,7 @@ void taskBruteForce(Board *b, int start, int numThreads, int threshold)
         }
     }
 
-    //printf(">>>>[%d|%d] v:%d@[%d]\n", omp_get_thread_num(),activeThreads, b->gameBoard[start].value, start);
-
+    //printf(">>>>[%d|%d] v:%d@[%d]\n", omp_get_thread_num(),activeThreads, b->gameBoard[start-1].value, start-1);
     for(i = start; i < b->size*b->size; i++)
     {
         if(END == TRUE)
@@ -78,7 +78,7 @@ void taskBruteForce(Board *b, int start, int numThreads, int threshold)
         {
             //check if there's work for all threads
             //work will only be generated at indexes multiple of sudoku Square Size
-            if(numThreads != 1 && (((i - start) % b->squareSize) == threshold) && (activeThreads < numThreads))
+            if(numThreads != 1 && (((i - start) % b->squareSize) == threshold) && (activeThreads <=  numThreads))
             {   
                 // Create work to one of other threads if possible
                 if((valid = makeGuess(b, i)) == TRUE)
@@ -167,7 +167,7 @@ int solver(Board *b)
         start_index++;
     }
 
-    #pragma omp parallel shared(activeThreads, b) firstprivate(start_index)
+    #pragma omp parallel shared( b) firstprivate(start_index)
     {
         /*Board *new = copyBoard(b);
         int threshold = 0;
@@ -193,7 +193,7 @@ int solver(Board *b)
                 numIniActiveThreads++;
 
                 new->gameBoard[start_index].value = i;
-                //printf("[%d]->%d@%d\n", omp_get_thread_num(), new->gameBoard[start_index].value, start_index);
+                printf("[%d]->%d@%d\n", omp_get_thread_num(), new->gameBoard[start_index].value, start_index);
                 updateMasks(new, start_index);
 
                 #pragma omp task
@@ -219,6 +219,28 @@ int solver(Board *b)
 
 }
 
+void printMasks(long int ** m, int index){
+    printMask(m[index][2], 81-64);
+    printf(" |");
+    printMask(m[index][1], 32);
+    printf(" |");
+    printMask(m[index][0], 32);
+    printf("\n");
+    
+}
+
+void test(Board * b){
+    printBoard(b);
+
+    for (int i = 0; i < b->size*b->size; ++i)
+    {
+        printf("\n->%d\n",i );
+        printMasks(b->rowMask, row(i,b->size));
+        printMasks(b->colMask, col(i,b->size));
+        printMasks(b->boxMask, box(i,b->squareSize));
+    }
+
+}
 /************************************
 *               MAIN                *
 ************************************/
@@ -226,13 +248,18 @@ int main(int argc, char const *argv[]) {
 
     Board *board = NULL;
 
+
+
     if(argv[1] != NULL)
     {
             board = (Board*)malloc(sizeof(Board));
             if((fillGameBoard(board, argv[1])) == 0)
             {
+                //printBoard(board);
+                //printFixed(board);
                 solver(board);              
-            //  checkValidity(board, 0, 2);
+                //checkValidity(board, 0, 2);
+                //test(board);
                 freeBoard(board);
             }
             free(board);

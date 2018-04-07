@@ -5,36 +5,37 @@ int allocBoard(Board *b)
 
     b->gameBoard = (Cell*)malloc(b->size*b->size*sizeof(Cell));
 
+    /*
     b->rowMask = (long int *)malloc(b->size*b->size * sizeof(long int));
     b->colMask = (long int *)malloc(b->size*b->size * sizeof(long int));
     b->boxMask = (long int *)malloc(b->size*b->size * sizeof(long int));
-
-    /*long int ** r = (long int **)malloc(sizeof(long int *) * 81);
-    long int ** c = (long int **)malloc(sizeof(long int *) * 81);
-    long int ** b = (long int **)malloc(sizeof(long int *) * 81);
     */
+
+    b->rowMask = (long int **)malloc(sizeof(long int *) * b->size);
+    b->colMask = (long int **)malloc(sizeof(long int *) * b->size);
+    b->boxMask = (long int **)malloc(sizeof(long int *) * b->size);
 
     for (int i = 0; i < b->size; ++i)
     {
+        /*
         b->rowMask[i] = 0;
         b->colMask[i] = 0;
         b->boxMask[i] = 0;
-        /*
-        b->rowMask[i][i] = (long int *)malloc(sizeof(long int ) * 3);
+        */
+        b->rowMask[i] = (long int *)malloc(sizeof(long int ) * 3);
         b->rowMask[i][0]=0;
         b->rowMask[i][1]=0;
         b->rowMask[i][2]=0;
 
-        b->colMask[i][i] = (long int *)malloc(sizeof(long int ) * 3);
+        b->colMask[i] = (long int *)malloc(sizeof(long int ) * 3);
         b->colMask[i][0]=0;
         b->colMask[i][1]=0;
         b->colMask[i][2]=0;
 
-        b->boxMask[i][i] = (long int *)malloc(sizeof(long int ) * 3);
+        b->boxMask[i] = (long int *)malloc(sizeof(long int ) * 3);
         b->boxMask[i][0]=0;
         b->boxMask[i][1]=0;
         b->boxMask[i][2]=0;
-        */
     }
 
     if(b->gameBoard == NULL)
@@ -59,10 +60,11 @@ Board * copyBoard(Board * original){
         new->gameBoard[i].value = original->gameBoard[i].value;
         new->gameBoard[i].fixed = original->gameBoard[i].fixed;
         
+        /*
         new->rowMask[row(i, original->size)] = original->rowMask[row(i, original->size)];
         new->colMask[col(i, original->size)] = original->colMask[col(i, original->size)];
         new->boxMask[box(i, original->squareSize)] = original->boxMask[box(i, original->squareSize)];
-        /*
+        */
         new->rowMask[row(i, original->size)][0] = original->rowMask[row(i, original->size)][0];
         new->rowMask[row(i, original->size)][1] = original->rowMask[row(i, original->size)][1];
         new->rowMask[row(i, original->size)][2] = original->rowMask[row(i, original->size)][2];
@@ -72,50 +74,51 @@ Board * copyBoard(Board * original){
         new->colMask[col(i, original->size)][2] = original->colMask[col(i, original->size)][2];
 
         new->boxMask[box(i, original->squareSize)][0] = original->boxMask[box(i, original->squareSize)][0];
-        new->boxMask[box(i, original->squareSize)][1] = original->boxMask[box(i, original->squareSize)][2];
+        new->boxMask[box(i, original->squareSize)][1] = original->boxMask[box(i, original->squareSize)][1];
         new->boxMask[box(i, original->squareSize)][2] = original->boxMask[box(i, original->squareSize)][2];
-        */
     }
     return new;
 }
 
 void removeMasks(Board * b, int i)  {
-    //int m_index = b->gameBoard[i].value/32;
-    int value = b->gameBoard[i].value;//- (m_index*32);
+    int value = b->gameBoard[i].value;
     if(value == 0){
         return;
     }
+    int m_index = b->gameBoard[i].value/32;
+    value -= (m_index*32);
 
     int row = row(i,b->size), col = col(i,b->size), box = box(i,b->squareSize);
     
+    /*
     b->rowMask[row] = removemask((b->rowMask[row]), value);
     b->colMask[col] = removemask((b->colMask[col]), value);
     b->boxMask[box] = removemask((b->boxMask[box]), value);
+    */
 
-    /*
     b->rowMask[row][m_index] = removemask((b->rowMask[row][m_index]), value);
     b->colMask[col][m_index] = removemask((b->colMask[col][m_index]), value);
     b->boxMask[box][m_index] = removemask((b->boxMask[box][m_index]), value);
-    */
 }
 
 void updateMasks(Board * b, int i){
     int row = row(i,b->size), col = col(i,b->size), box = box(i,b->squareSize);
-    //int m_index = b->gameBoard[i].value/32;
-    int value = b->gameBoard[i].value ;//- (m_index*32);
-     if(value == 0){
+    int value = b->gameBoard[i].value;
+    if(value == 0){
         return;
     }
+    int m_index = b->gameBoard[i].value/32;
+    value -= (m_index*32);
     
+    /*  
     b->rowMask[row] = addmask(b->rowMask[row], value);
     b->colMask[col] = addmask(b->colMask[col], value);
     b->boxMask[box] = addmask(b->boxMask[box], value);
+    */
     
-    /*  
     b->rowMask[row][m_index] = addmask(b->rowMask[row][m_index], value);
     b->colMask[col][m_index] = addmask(b->colMask[col][m_index], value);
     b->boxMask[box][m_index] = addmask(b->boxMask[box][m_index], value);
-    */
 }
 
 
@@ -139,15 +142,15 @@ int checkValidityMasks(Board *b, int index, int value){
     int l = b->squareSize, totalMask, ret;
     int r = row(index,(l*l)), c = col(index,(l*l)), bo = box(index,l);
     
-    //int m_index = value/32;
+    int m_index = value/32;
+    /*
     long int mr  = b->rowMask[r];   
     long int mc = b->colMask[c];
     long int mb = b->boxMask[bo];
-    /*
+    */
     long int mr  = b->rowMask[r][m_index];
     long int mc = b->colMask[c][m_index];
     long int mb = b->boxMask[bo][m_index];
-    */
     totalMask = ((mr | mc) | mb);
 
     //if value is valid, given the totalMask
@@ -159,24 +162,24 @@ void freeBoard(Board *b)
 {
     free(b->gameBoard);
     
-    /*
+    
     for (int i = 0; i < b->size; ++i)
-    {
-        
+    {        
         free(b->rowMask[i]);
         free(b->colMask[i]);
         free(b->boxMask[i]);
     }
-    */
+    
     free(b->rowMask);
     free(b->colMask);
     free(b->boxMask);
+    
 }
 
 /* Creates a vector of possibilities for each cell that has a value != 0 */
 int fillGameBoard(Board *board, char const* file)
 {
-    int i = 0, j = 0, index = 0, box = 0; //m_index = 0, value = 0;
+    int i = 0, j = 0, index = 0, box = 0, m_index = 0, value = 0;
     char *line = NULL;
     char *aux = NULL;
     FILE *fptr = fopen(file, "r");
@@ -241,18 +244,19 @@ int fillGameBoard(Board *board, char const* file)
 
                     }else
                     {
+                        /*
                         board->gameBoard[index].fixed = TRUE;
                         board->rowMask[i] = addmask(board->rowMask[i], atoi(aux));
                         board->colMask[j] = addmask(board->colMask[j], atoi(aux));
                         board->boxMask[box] = addmask(board->boxMask[box], atoi(aux));
-                        /*
+                        */
+                        board->gameBoard[index].fixed = TRUE;
                         value = atoi(aux);
                         m_index = value/32;
                         value -= m_index*32;
                         board->rowMask[i][m_index] = addmask(board->rowMask[i][m_index], value);
                         board->colMask[j][m_index] = addmask(board->colMask[j][m_index], value);
                         board->boxMask[box][m_index] = addmask(board->boxMask[box][m_index], value);
-                        */
                     }
 
                     board->gameBoard[index].value = atoi(aux);
@@ -288,6 +292,22 @@ void printBoard(Board *b)
     for(i = 0; i < b->size*b->size; i++)
     {
         printf("%d ", b->gameBoard[i].value);
+
+        if((i+1)%(b->size) == 0){
+
+            printf("\n");
+        }
+    }
+    printf("\n" );
+}
+
+void printFixed(Board *b)
+{
+    int i = 0;
+    
+    for(i = 0; i < b->size*b->size; i++)
+    {
+        printf("%d ", (b->gameBoard[i].fixed)?1:0);
 
         if((i+1)%(b->size) == 0){
 
