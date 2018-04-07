@@ -2,19 +2,13 @@ CC=gcc
 FLAGS=-g -Wall
 EXTRA=-fopenmp
 
-I: main.o strategies.o  board.o utils.o
+I: sudoku-omp.o  board.o
 	$(CC) -o $@ $^ $(FLAGS) $(EXTRA)
 
-main.o: main.c strategies.h
+sudoku-omp.o: sudoku-omp.c board.h
 	$(CC) -c $^ $(FLAGS) $(EXTRA)
 
-strategies.o: strategies.c board.h
-	$(CC) -c $^ $(FLAGS) $(EXTRA)
-
-board.o: board.c utils.h
-	$(CC) -c $^ $(FLAGS) $(EXTRA)
-
-utils.o: utils.c
+board.o: board.c
 	$(CC) -c $^ $(FLAGS) $(EXTRA)
 
 clean:

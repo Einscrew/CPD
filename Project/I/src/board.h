@@ -7,7 +7,9 @@
 #define TRUE 1
 #define FALSE 0
 
-#include "utils.h"
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
 #define no(x,y,l) (y*l+x)
 #define row(n,l) (n/l)
@@ -30,9 +32,9 @@ typedef struct Cell{
 typedef struct Board{
 
     Cell *gameBoard;
-    int * rowMask;
-	int * colMask;
-    int * boxMask;	
+    long int * rowMask;
+	long int * colMask;
+    long int * boxMask;	
     char size;
     char squareSize;
 
@@ -45,7 +47,7 @@ Board * copyBoard(Board* original);
 void updateMasks(Board * b, int i);
 void removeMasks(Board * b, int i);
 
-int checkValidity(Board * b, int size, int value);
+int checkValidityMasks(Board * b, int size, int value);
 int checkAllBoard(Board *b);
 void freeBoard(Board *b);
 

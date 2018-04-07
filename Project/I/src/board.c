@@ -4,9 +4,9 @@ int allocBoard(Board *b)
 {
 
     b->gameBoard = (Cell*)malloc(b->size*b->size*sizeof(Cell));
-    b->rowMask = (int *)malloc(b->size*b->size * sizeof(int));
-    b->colMask = (int *)malloc(b->size*b->size * sizeof(int));
-    b->boxMask = (int *)malloc(b->size*b->size * sizeof(int));
+    b->rowMask = (long int *)malloc(b->size*b->size * sizeof(long int));
+    b->colMask = (long int *)malloc(b->size*b->size * sizeof(long int));
+    b->boxMask = (long int *)malloc(b->size*b->size * sizeof(long int));
 
     for (int i = 0; i < b->size; ++i)
     {
@@ -82,17 +82,90 @@ void printMask(int n, int c){
           printf("0");
     }
     printf("\t");
-}                   
-int checkValidity(Board *b, int index, int value){
+}
+
+int checkValidityNormal(Board *b, int index, int value)
+{
+
+    int i = 0, l = row(index,b->size), c = col(index,b->size), result = TRUE;
+    int bline = off(l, b->squareSize), bcol = off(c, b->squareSize);
+
+    int currb = no(bcol+i, bline, b->size), currl = no(0, l, b->size), currc = no(c, 0, b->size);
+
+    int * existInLine = (int*)malloc(b->size * sizeof(int));
+    int * existInCol = (int*)malloc(b->size * sizeof(int));
+    int * existInBox = (int*)malloc(b->size * sizeof(int));
+
+    for(i = 0; i < b->size; i++){
+        existInLine[i] = FALSE;
+        existInCol[i] = FALSE;
+        existInBox[i] = FALSE;
+
+    }
+    for(i = 0; i < b->size; i++){
+        //line
+        //printf("%d\n", b->gameBoard[no(i, l, b->size)].value);
+
+        //column
+        //printf("%d\n", b->gameBoard[no(c, i, b->size)].value);
+
+        //box
+        //printf("%d %d\n", bcol, bline+i);//b->gameBoard[no(bcol, bline+i, b->size)].value);
+
+        currc = no(c, i, b->size);
+        currl = no(i, l, b->size);
+        currb = no(bcol+i, bline, b->size);
+
+        //printf("currl: %d currc: %d currbox:%d \n", currl, currc, currb);
+
+        if(b->gameBoard[currl].value != 0){
+            if(existInLine[b->gameBoard[currl].value-1] == TRUE){
+                result = FALSE;
+                break;
+            }
+            existInLine[b->gameBoard[currl].value-1] = TRUE;
+        }
+        if(b->gameBoard[currc].value != 0){
+
+            if(existInCol[b->gameBoard[currc].value-1] == TRUE){
+                result = FALSE;
+                break;
+            }
+            existInCol[b->gameBoard[currc].value-1] = TRUE;
+        }
+        if(b->gameBoard[currb].value != 0){
+            if(existInBox[b->gameBoard[currb].value -1] == TRUE){
+                result = FALSE;
+                break;
+            }
+            existInBox[b->gameBoard[currb].value -1] = TRUE;
+        }
+
+        if(((i+1)%b->squareSize) == 0){
+            bcol -= b->squareSize;
+            bline++;
+        }
+
+    }
+
+    free(existInLine);
+    free(existInCol);
+    free(existInBox);
+
+    return result;
+}
+int checkValidityMasks(Board *b, int index, int value){
 
     int l = b->squareSize, totalMask, ret;
     int r = row(index,(l*l)), c = col(index,(l*l)), bo = box(index,l);
 
-    int mr  = b->rowMask[r];
-    int mc = b->colMask[c];
-    int mb = b->boxMask[bo];
+    long int mr  = b->rowMask[r];
+    long int mc = b->colMask[c];
+    long int mb = b->boxMask[bo];
+
     totalMask = ((mr | mc) | mb);
-    // printMask(totalMask, 9);
+
+    //if value is valid, given the totalMask
     ret = valid(value, totalMask);
     return ret;
 }
@@ -154,6 +227,7 @@ int fillGameBoard(Board *board, char const* file)
         if(line == NULL)
         {
             printf("Error on malloc!\n");
+            freeBoard(board);
             fclose(fptr);
             return -1;
         }
@@ -190,6 +264,8 @@ int fillGameBoard(Board *board, char const* file)
                 else
                 {
                     printf("There is an invalid number on the board game, check the file!\n");
+                    free(line);
+                    freeBoard(board);
                     fclose(fptr);
                     return -1;
                 }
