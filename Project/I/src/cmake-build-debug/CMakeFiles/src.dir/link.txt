@@ -1,1 +1,0 @@
-/usr/bin/gcc -g   CMakeFiles/src.dir/board.c.o CMakeFiles/src.dir/sudoku-omp.c.o  -o src 
