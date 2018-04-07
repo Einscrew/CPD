@@ -1,13 +1,16 @@
 #ifndef BOARD
 #define BOARD
 
+#include <omp.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #define MAX_SQUARE_SIZE 9 /* Max value of l */
 #define MIN_SQUARE_SIZE 2 /* Min value of l */
 #define MAX 100
 #define TRUE 1
 #define FALSE 0
-
-#include "utils.h"
 
 #define no(x,y,l) (y*l+x)
 #define row(n,l) (n/l)
@@ -26,7 +29,6 @@ typedef struct Cell{
     char fixed;
 }Cell;
 
-
 typedef struct Board{
 
     Cell *gameBoard;
@@ -37,7 +39,6 @@ typedef struct Board{
     char squareSize;
 
 }Board;
-
 
 int allocBoard(Board * b);
 Board * copyBoard(Board* original);

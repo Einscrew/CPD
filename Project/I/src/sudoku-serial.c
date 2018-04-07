@@ -1,10 +1,4 @@
-#include <omp.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include "sudoku-serial.h"
-
-int activeThreads = 0;
-int END = 0;
 
 int makeGuess(Board *b, int i){
 
@@ -24,7 +18,7 @@ int makeGuess(Board *b, int i){
     return FALSE;
 }
 
-int  bruteforce(Board *b, int start){
+int bruteForce(Board *b, int start){
 
 	int i,valid = TRUE;
 
@@ -56,7 +50,7 @@ int  bruteforce(Board *b, int start){
 				}while (i >= start && (b->gameBoard[i].fixed == TRUE || b->gameBoard[i].value == b->size));
 
 				if(i < start){
-					printf("Sudoku has no solution.\n");
+					printf("No solution\n");
 					return FALSE;
 				}
 			}
@@ -75,7 +69,7 @@ int main(int argc, char const *argv[]) {
             board = (Board*)malloc(sizeof(Board));
             if((fillGameBoard(board, argv[1])) == 0)
             {
-            	bruteforce(board , 0);       
+            	bruteForce(board , 0);       
                 freeBoard(board);
             }
             free(board);
@@ -84,7 +78,7 @@ int main(int argc, char const *argv[]) {
     {
             printf("No file was specified!\n");
     }
-    printf("THE END\n" );
+    
     return 0;
 }
 

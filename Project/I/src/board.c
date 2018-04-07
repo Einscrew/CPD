@@ -23,7 +23,7 @@ int allocBoard(Board *b)
     return 0;
 }
 
-Board * copyBoard(Board * original){
+Board *copyBoard(Board * original){
 
     Board * new = (Board *)malloc(sizeof(Board));
 
@@ -111,7 +111,6 @@ void freeBoard(Board *b)
     free(b->boxMask);
 }
 
-/* Creates a vector of possibilities for each cell that has a value != 0 */
 int fillGameBoard(Board *board, char const* file)
 {
     int i = 0, j = 0, index = 0, box = 0;
