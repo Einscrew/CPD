@@ -18,11 +18,11 @@ int makeGuess(Board *b, int i){
     return FALSE;
 }
 
-void bruteForce(Board *b, int start){
+void bruteForce(Board *b){
 
-	int i,valid = TRUE;
+	int i = 0,valid = TRUE;
 
-	for(i = start; i < b->size*b->size; i++){
+	for(i = 0; i < b->size*b->size; i++){
 
 		if(valid == FALSE)
 		{
@@ -46,9 +46,9 @@ void bruteForce(Board *b, int start){
 					}
 
 					i--;
-				}while (i >= start && (b->gameBoard[i].fixed == TRUE || b->gameBoard[i].value == b->size));
+				}while (i >= 0 && (b->gameBoard[i].fixed == TRUE || b->gameBoard[i].value == b->size));
 
-				if(i < start)
+				if(i < 0)
                 {
 					printf("No solution\n");
 					return;
@@ -68,7 +68,7 @@ int main(int argc, char const *argv[]) {
             board = (Board*)malloc(sizeof(Board));
             if((fillGameBoard(board, argv[1])) == 0)
             {
-            	bruteForce(board , 0);       
+            	bruteForce(board);       
                 freeBoard(board);
             }
             free(board);
