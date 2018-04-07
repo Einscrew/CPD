@@ -3,7 +3,7 @@
 
 #define MAX_SQUARE_SIZE 9 /* Max value of l */
 #define MIN_SQUARE_SIZE 2 /* Min value of l */
-#define MAX 200
+#define MAX 300
 #define TRUE 1
 #define FALSE 0
 
