@@ -48,7 +48,6 @@ void updateMasks(Board * b, int i);
 void removeMasks(Board * b, int i);
 
 int checkValidityMasks(Board * b, int size, int value);
-int checkAllBoard(Board *b);
 void freeBoard(Board *b);
 
 

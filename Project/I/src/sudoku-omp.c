@@ -142,7 +142,8 @@ void taskBruteForce(Board *b, int start, int numThreads, int threshold)
 
     #pragma omp critical (print)
     {
-        if(END== FALSE){
+        if(END == FALSE)
+        {
             END = TRUE;
             printf("Thread: %d\n", omp_get_thread_num());   
             printBoard(b);
@@ -160,7 +161,9 @@ void taskBruteForce(Board *b, int start, int numThreads, int threshold)
 int solver(Board *b)
 {    
     int start_index = 0;
-    while(b->gameBoard[start_index].fixed == TRUE){
+
+    while(b->gameBoard[start_index].fixed == TRUE)
+    {
         start_index++;
     }
 
@@ -182,15 +185,15 @@ int solver(Board *b)
         #pragma omp for schedule(dynamic)
         for (int i = 1; i <= b->size; i++)
         {
-            Board *new = copyBoard(b);
-
-             if(checkValidityMasks(new, start_index, i) == TRUE)
+             if(checkValidityMasks(b, start_index, i) == TRUE)
              {
+                Board *new = copyBoard(b);
+
                 #pragma omp atomic
                 numIniActiveThreads++;
 
                 new->gameBoard[start_index].value = i;
-                printf("[%d]->%d@%d\n", omp_get_thread_num(), new->gameBoard[start_index].value, start_index);
+                //printf("[%d]->%d@%d\n", omp_get_thread_num(), new->gameBoard[start_index].value, start_index);
                 updateMasks(new, start_index);
 
                 #pragma omp task
@@ -217,51 +220,6 @@ int solver(Board *b)
 }
 
 /************************************
-*       SERIAL IMPLEMENTATION       *
-************************************/
-
-int bruteforce(Board *b, int start){
-
-	int i = 0,valid = TRUE;
-
-	for(i = start; i < b->size*b->size; i++){
-		//printf("%d\n", i);
-
-		if(valid == FALSE)
-		{
-			i--;
-			valid = TRUE;
-		}
-        // For non fixed values:
-		if(b->gameBoard[i].fixed == FALSE){
-			
-            // No more alternatives
-			if((valid = makeGuess(b, i)) == FALSE){
-
-                // Backtrack
-				do{
-                    // Erasing supposed values in the way back
-					if(b->gameBoard[i].fixed == FALSE)
-					{
-						// Erase guess & masks
-                        removeMasks(b, i);
-                        b->gameBoard[i].value = 0;
-					}
-
-					i--;
-				}while (i >= start && (b->gameBoard[i].fixed == TRUE || b->gameBoard[i].value == b->size));
-
-				if(i <= start && b->gameBoard[i].value == b->size){
-					return FALSE;
-				}
-			}
-		}
-	}
-	return TRUE;
-}
-
-
-/************************************
 *               MAIN                *
 ************************************/
 int main(int argc, char const *argv[]) {
@@ -283,6 +241,6 @@ int main(int argc, char const *argv[]) {
     {
             printf("No file was specified!\n");
     }
-    printf("THE END\n" );
+   
     return 0;
 }
