@@ -9,15 +9,8 @@
 
 int allocBoard(Board *b)
 {
-
+    /* Allocs memory for the game board and the masks */
     b->gameBoard = (Cell*)malloc(b->size*b->size*sizeof(Cell));
-
-    /*
-    b->rowMask = (long int *)malloc(b->size*b->size * sizeof(long int));
-    b->colMask = (long int *)malloc(b->size*b->size * sizeof(long int));
-    b->boxMask = (long int *)malloc(b->size*b->size * sizeof(long int));
-    */
-
     b->rowMask = (long int **)malloc(sizeof(long int *) * b->size);
     b->colMask = (long int **)malloc(sizeof(long int *) * b->size);
     b->boxMask = (long int **)malloc(sizeof(long int *) * b->size);
@@ -25,11 +18,6 @@ int allocBoard(Board *b)
     /* Initializes all masks with 0 */
     for (int i = 0; i < b->size; ++i)
     {
-        /*
-        b->rowMask[i] = 0;
-        b->colMask[i] = 0;
-        b->boxMask[i] = 0;
-        */
         b->rowMask[i] = (long int *)malloc(sizeof(long int ) * 3);
         b->rowMask[i][0]=0;
         b->rowMask[i][1]=0;
@@ -94,9 +82,12 @@ Board * copyBoard(Board * original){
 *       Removes a mask in a row, column and box      *                           *
 *****************************************************/
 
-void removeMasks(Board * b, int i)  {
+void removeMasks(Board * b, int i)
+{
     int value = b->gameBoard[i].value;
-    if(value == 0){
+
+    if(value == 0)
+    {
         return;
     }
     int m_index = b->gameBoard[i].value/32;
@@ -104,23 +95,30 @@ void removeMasks(Board * b, int i)  {
 
     int row = row(i,b->size), col = col(i,b->size), box = box(i,b->squareSize);
 
+    /* Removes masks in the respectvie row, column and box */
     b->rowMask[row][m_index] = removemask((b->rowMask[row][m_index]), value);
     b->colMask[col][m_index] = removemask((b->colMask[col][m_index]), value);
     b->boxMask[box][m_index] = removemask((b->boxMask[box][m_index]), value);
 }
+
 /*****************************************************
 *       Updates a mask in a row, column and box      *                           *
 *****************************************************/
 
-void updateMasks(Board * b, int i){
+void updateMasks(Board * b, int i)
+{
     int row = row(i,b->size), col = col(i,b->size), box = box(i,b->squareSize);
     int value = b->gameBoard[i].value;
-    if(value == 0){
+
+    if(value == 0)
+    {
         return;
     }
+
     int m_index = b->gameBoard[i].value/32;
     value -= (m_index*32);
     
+    /* Adds masks in the respectvie row, column and box */
     b->rowMask[row][m_index] = addmask(b->rowMask[row][m_index], value);
     b->colMask[col][m_index] = addmask(b->colMask[col][m_index], value);
     b->boxMask[box][m_index] = addmask(b->boxMask[box][m_index], value);
@@ -133,24 +131,25 @@ void updateMasks(Board * b, int i){
 * Returns: 1 if it's valid                                                           *
 *          0 otherwise                                                               *
 *************************************************************************************/
+
 int checkValidityMasks(Board *b, int index, int value){
 
     int l = b->squareSize, totalMask, ret;
     int r = row(index,(l*l)), c = col(index,(l*l)), bo = box(index,l);
     
     int m_index = value/32;
-    /*
-    long int mr  = b->rowMask[r];   
-    long int mc = b->colMask[c];
-    long int mb = b->boxMask[bo];
-    */
+
+    /* Mask of row, column and box*/
     long int mr  = b->rowMask[r][m_index];
     long int mc = b->colMask[c][m_index];
     long int mb = b->boxMask[bo][m_index];
+
+    /* OR between masks */
     totalMask = ((mr | mc) | mb);
 
-    //if value is valid, given the totalMask
+    /* Checks if that is a valid number for that index based on masks */
     ret = valid(value, totalMask);
+
     return ret;
 }
 
@@ -176,7 +175,8 @@ int fillGameBoard(Board *board, char const* file)
     else
     {
         /* Gets the board size */
-        if(fscanf(fptr, "%d\n", (int*)&(board->squareSize)) != 1){
+        if(fscanf(fptr, "%d\n", (int*)&(board->squareSize)) != 1)
+        {
             printf("Board size not specified in the file!\n");
             fclose(fptr);
             return -1;
@@ -185,7 +185,6 @@ int fillGameBoard(Board *board, char const* file)
         {
             board->size = board->squareSize*board->squareSize;
             
-
             if(allocBoard(board) != 0)
             {
                 fclose(fptr);
@@ -222,22 +221,19 @@ int fillGameBoard(Board *board, char const* file)
                     index = no(j,i,board->size);
                     box = box(index, board->squareSize);
 
+                    /* Checks if it's a fixed given value (!= from 0) */
                     if(atoi(aux) == 0)
                     {
                         board->gameBoard[index].fixed = FALSE;
 
                     }else
                     {
-                        /*
-                        board->gameBoard[index].fixed = TRUE;
-                        board->rowMask[i] = addmask(board->rowMask[i], atoi(aux));
-                        board->colMask[j] = addmask(board->colMask[j], atoi(aux));
-                        board->boxMask[box] = addmask(board->boxMask[box], atoi(aux));
-                        */
                         board->gameBoard[index].fixed = TRUE;
                         value = atoi(aux);
                         m_index = value/32;
                         value -= m_index*32;
+
+                        /* Add masks to the game board */
                         board->rowMask[i][m_index] = addmask(board->rowMask[i][m_index], value);
                         board->colMask[j][m_index] = addmask(board->colMask[j][m_index], value);
                         board->boxMask[box][m_index] = addmask(board->boxMask[box][m_index], value);
@@ -267,8 +263,6 @@ int fillGameBoard(Board *board, char const* file)
     return 0;
 }
 
-
-
 /**********************************
 *       Prints a game board       *
 **********************************/
@@ -286,7 +280,6 @@ void printBoard(Board *b)
             printf("\n");
         }
     }
-    printf("\n" );
 }
 
 /*********************************************
@@ -296,7 +289,6 @@ void printBoard(Board *b)
 void freeBoard(Board *b)
 {
     free(b->gameBoard);
-    
     
     for (int i = 0; i < b->size; ++i)
     {        
@@ -308,5 +300,4 @@ void freeBoard(Board *b)
     free(b->rowMask);
     free(b->colMask);
     free(b->boxMask);
-    
 }
