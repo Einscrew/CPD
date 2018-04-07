@@ -4,10 +4,10 @@ EXTRA=-fopenmp
 
 NAME=sudoku-serial
 
-$(NAME): sudoku-serial.o  board.o
+$(NAME): $(NAME).o  board.o
 	$(CC) -o $@ $^ $(FLAGS) $(EXTRA)
 
-sudoku-serial.o: sudoku-serial.c board.h
+$(NAME).o: $(NAME).c board.h
 	$(CC) -c $^ $(FLAGS) $(EXTRA)
 
 board.o: board.c
