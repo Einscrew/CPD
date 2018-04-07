@@ -7,12 +7,11 @@ int flagStart = 0;
 int flagINI = 0;
 int numIniActiveThreads = 0;
 
-
 /************************************
 *    Make guess to certain index    *
 *                                   *
 * Returns: TRUE  on valid guess     *
-*          FALSE when not possible  *
+*          FALSE otherwise          *
 ************************************/
 int makeGuess(Board *b, int i){
 
@@ -21,7 +20,6 @@ int makeGuess(Board *b, int i){
 
     while(value <= b->size)
     {
-
         if(checkValidityMasks(b, i, value) == TRUE){
             b->gameBoard[i].value = value;
             updateMasks(b, i);
@@ -145,7 +143,7 @@ void taskBruteForce(Board *b, int start, int numThreads, int threshold)
         if(END == FALSE)
         {
             END = TRUE;
-            printf("Thread: %d\n", omp_get_thread_num());   
+            //printf("Thread: %d\n", omp_get_thread_num());   
             printBoard(b);
         }
     }

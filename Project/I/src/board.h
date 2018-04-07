@@ -17,20 +17,21 @@
 #define off(i,sl) ((i / sl) * sl)
 #define box(i, bs) (((row(i,(bs*bs))/bs) * bs) + (col(i,(bs*bs))/bs))
 
-#define mask(n) ( 1 << (n - 1) )
-#define addmask(m,a) ( m | mask(a) )
+#define mask(n) (1 << (n - 1))
+#define addmask(m,a) (m | mask(a))
 #define valid(v, m) (((mask(v) & m) == 0)?1:0)
-#define removemask(m,r) ( m & (~(mask(r))) )
+#define removemask(m,r) (m & (~(mask(r))))
 
 
-typedef struct Cell{
+typedef struct Cell
+{
     char value;
     char fixed;
 }Cell;
 
 
-typedef struct Board{
-
+typedef struct Board
+{
     Cell *gameBoard;
     long int * rowMask;
 	long int * colMask;

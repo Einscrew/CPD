@@ -194,7 +194,8 @@ int fillGameBoard(Board *board, char const* file)
     else
     {
         /* Gets the board size */
-        if(fscanf(fptr, "%d\n", (int*)&(board->squareSize)) != 1){
+        if(fscanf(fptr, "%d\n", (int*)&(board->squareSize)) != 1)
+        {
             printf("Board size not specified in the file!\n");
             fclose(fptr);
             return -1;
@@ -203,7 +204,6 @@ int fillGameBoard(Board *board, char const* file)
         {
             board->size = board->squareSize*board->squareSize;
             
-
             if(allocBoard(board) != 0)
             {
                 fclose(fptr);
@@ -291,5 +291,4 @@ void printBoard(Board *b)
             printf("\n");
         }
     }
-    printf("\n" );
 }
