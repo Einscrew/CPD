@@ -16,7 +16,7 @@ int makeGuess(Board *b, int i)
     while(value <= b->size)
     {
     	/* Checks if value is a valid number for cell with index i */
-        if(checkValidity(b, i, value) == TRUE)
+        if(checkValidityMasks(b, i, value) == TRUE)
         {
             b->gameBoard[i].value = value;
             updateMasks(b, i); /* Update masks according to the guess done */

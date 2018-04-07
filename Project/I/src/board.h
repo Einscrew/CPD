@@ -1,9 +1,9 @@
 #ifndef BOARD
 #define BOARD
 
-#include <omp.h>
-#include <stdio.h>
+
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 
 #define MAX_SQUARE_SIZE 9 /* Max value of l */
@@ -20,10 +20,10 @@
 #define box(i, bs) (((row(i,(bs*bs))/bs) * bs) + (col(i,(bs*bs))/bs))
 
 /* Used to add, remove, update and check masks */
-#define mask(n) (1 << (n - 1))
-#define addmask(m,a) (m | mask(a))
+#define mask(n) ( 1 << (n - 1) )
+#define addmask(m,a) ( m | mask(a) )
 #define valid(v, m) (((mask(v) & m) == 0)?1:0)
-#define removemask(m,r) (m & (~(mask(r))))
+#define removemask(m,r) ( m & (~(mask(r))) )
 
 
 typedef struct Cell{
@@ -34,19 +34,19 @@ typedef struct Cell{
 typedef struct Board{
 
     Cell *gameBoard;
-    int * rowMask;
-	int * colMask;
-    int * boxMask;	
+    long int ** rowMask;
+	long int ** colMask;
+    long int ** boxMask;	
     char size;
     char squareSize;
 
 }Board;
 
 int allocBoard(Board * b);
-Board *copyBoard(Board* original);
-void removeMasks(Board * b, int i);
+Board * copyBoard(Board* original);
 void updateMasks(Board * b, int i);
-int checkValidity(Board * b, int size, int value);
+void removeMasks(Board * b, int i);
+int checkValidityMasks(Board * b, int size, int value);
 int fillGameBoard(Board *b, char const* file);
 void printBoard(Board * b);
 void freeBoard(Board *b);
