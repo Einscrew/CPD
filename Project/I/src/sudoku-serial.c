@@ -1,53 +1,71 @@
 #include "sudoku-serial.h"
 
-int makeGuess(Board *b, int i){
+/*******************************************************
+*    Makes a guess in a game board at a given index    *
+*                                        			   *
+* Returns: TRUE if it finds a valid guess     		   *
+*          FALSE otherwise               			   *
+*******************************************************/
 
+int makeGuess(Board *b, int i)
+{	
+	/* Remove masks before assigning a new guess */
     removeMasks(b, i);
     int value = b->gameBoard[i].value + 1;
 
-    while(value <= b->size){
-
-        if(checkValidity(b, i, value) == TRUE){
+    while(value <= b->size)
+    {
+    	/* Checks if value is a valid number for cell with index i */
+        if(checkValidity(b, i, value) == TRUE)
+        {
             b->gameBoard[i].value = value;
-            updateMasks(b, i);
+            updateMasks(b, i); /* Update masks according to the guess done */
             return TRUE;
         }
         
+        /* Test the next value */
         value++;
     }
     return FALSE;
 }
 
+/****************************************************************************************
+*    Brute force algorithm that receives a board and finds a solution if there's one    *            										   	    *
+*****************************************************************************************/
+
 void bruteForce(Board *b){
 
-	int i = 0,valid = TRUE;
+	int i = 0, valid = TRUE;
 
-	for(i = 0; i < b->size*b->size; i++){
-
+	for(i = 0; i < b->size*b->size; i++)
+	{
 		if(valid == FALSE)
 		{
 			i--;
 			valid = TRUE;
 		}
-        // For non fixed values:sudoku-ser
-		if(b->gameBoard[i].fixed == FALSE){
-			
-            // No more alternatives
-			if((valid = makeGuess(b, i)) == FALSE){
-
-                // Backtrack
-				do{
-                    // Erasing supposed values in the way back
+        
+        /* Looks for an unfixed cell */
+		if(b->gameBoard[i].fixed == FALSE)
+		{
+            /* Checks if there is a valid guess for that index */
+			if((valid = makeGuess(b, i)) == FALSE)
+			{
+                /* If there's no possible value for that unfixed index, it has to backtrack to the last unfixed cell */
+				do
+				{
+                    /* Put back the 0 value into the unfixed cell and removes masks */
 					if(b->gameBoard[i].fixed == FALSE)
 					{
-						// Erase guess & masks
                         removeMasks(b, i);
                         b->gameBoard[i].value = 0;
 					}
 
 					i--;
+
 				}while (i >= 0 && (b->gameBoard[i].fixed == TRUE || b->gameBoard[i].value == b->size));
 
+				/* If the index is < 0, then there's no solution for the gicen sudoku */
 				if(i < 0)
                 {
 					printf("No solution\n");
@@ -56,26 +74,42 @@ void bruteForce(Board *b){
 			}
 		}
 	}
+
+	/* If the solution is find, print it */
 	printBoard(b);
 }
+
+/****************************************************************************
+*    Allocs a board, fills that board and find a solution if there's one    *
+*                                        			   						*
+* Returns: 0 at exit     		   											*        								    
+****************************************************************************/
 
 int main(int argc, char const *argv[]) {
 
     Board *board = NULL;
 
+    /* Checks if teh user gives the input file */
     if(argv[1] != NULL)
     {
-            board = (Board*)malloc(sizeof(Board));
-            if((fillGameBoard(board, argv[1])) == 0)
-            {
-            	bruteForce(board);       
-                freeBoard(board);
-            }
-            free(board);
+        board = (Board*)malloc(sizeof(Board));
+        
+        if((fillGameBoard(board, argv[1])) == 0)
+        {
+        	/* Finds a solution if there's one */
+        	bruteForce(board);
+
+        	/* Frees memory allocated */      
+            freeBoard(board);
+        }
+
+        /* Frees memory allocated */
+        free(board);
     }
     else
     {
-            printf("No file was specified!\n");
+    	/* If theres's no input file given by the user */
+        printf("No file was specified!\n");
     }
     
     return 0;

@@ -8,20 +8,22 @@
 
 #define MAX_SQUARE_SIZE 9 /* Max value of l */
 #define MIN_SQUARE_SIZE 2 /* Min value of l */
-#define MAX 100
+#define MAX 200
 #define TRUE 1
 #define FALSE 0
 
+/* Used to convert matrix indexes to unidimensional arrays */
 #define no(x,y,l) (y*l+x)
 #define row(n,l) (n/l)
 #define col(n,l) (n%l)
 #define off(i,sl) ((i / sl) * sl)
 #define box(i, bs) (((row(i,(bs*bs))/bs) * bs) + (col(i,(bs*bs))/bs))
 
-#define mask(n) ( 1 << (n - 1) )
-#define addmask(m,a) ( m | mask(a) )
+/* Used to add, remove, update and check masks */
+#define mask(n) (1 << (n - 1))
+#define addmask(m,a) (m | mask(a))
 #define valid(v, m) (((mask(v) & m) == 0)?1:0)
-#define removemask(m,r) ( m & (~(mask(r))) )
+#define removemask(m,r) (m & (~(mask(r))))
 
 
 typedef struct Cell{
@@ -41,17 +43,12 @@ typedef struct Board{
 }Board;
 
 int allocBoard(Board * b);
-Board * copyBoard(Board* original);
-
-void updateMasks(Board * b, int i);
+Board *copyBoard(Board* original);
 void removeMasks(Board * b, int i);
-
+void updateMasks(Board * b, int i);
 int checkValidity(Board * b, int size, int value);
-int checkAllBoard(Board *b);
-void freeBoard(Board *b);
-
-
 int fillGameBoard(Board *b, char const* file);
 void printBoard(Board * b);
+void freeBoard(Board *b);
 
 #endif
