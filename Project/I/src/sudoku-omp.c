@@ -7,45 +7,55 @@ int flagStart = 0;
 int flagINI = 0;
 int numIniActiveThreads = 0;
 
-/************************************
-*    Make guess to certain index    *
-*                                   *
-* Returns: TRUE  on valid guess     *
-*          FALSE otherwise          *
-************************************/
-int makeGuess(Board *b, int i){
+/*******************************************************
+*    Makes a guess in a game board at a given index    *
+*                                                      *
+* Returns: TRUE if it finds a valid guess              *
+*          FALSE otherwise                             *
+*******************************************************/
 
+int makeGuess(Board *b, int i)
+{   
+    /* Remove masks before assigning a new guess */
     removeMasks(b, i);
     int value = b->gameBoard[i].value + 1;
 
     while(value <= b->size)
     {
-        if(checkValidityMasks(b, i, value) == TRUE){
+        /* Checks if value is a valid number for cell with index i */
+        if(checkValidityMasks(b, i, value) == TRUE)
+        {
             b->gameBoard[i].value = value;
-            updateMasks(b, i);
+            updateMasks(b, i); /* Update masks according to the guess done */
             return TRUE;
         }
         
+        /* Test the next value */
         value++;
     }
     return FALSE;
 }
 
-/************************************
-*           PARALLEL TASK           *
-************************************/
+/******************************************************************************************************************
+*           Brute force algorithm with backtracking that generates work for threads that are not working          *
+*           and finds a solution if there's one, otherwise prints No Solution                                     *
+******************************************************************************************************************/
 
 void taskBruteForce(Board *b, int start, int numThreads, int threshold)
 {
     int i = 0, valid = TRUE;
 
+    /* Each thread will start at the same time where 
+    all the possible values for the first unfixed cell were tested and added to the pool of tasks*/
     while(flagStart != b->size)
     {}
     
+    /* Flag that is used to know when the threads start working */
     if(flagINI == 0)
     {
         flagINI = 1;
 
+        /* Keep track of how many threads are working */
         if(numThreads <= numIniActiveThreads)
         {
             activeThreads = numThreads;
@@ -53,11 +63,8 @@ void taskBruteForce(Board *b, int start, int numThreads, int threshold)
         else
         {
             activeThreads = numIniActiveThreads;
-
         }
     }
-
-    //printf(">>>>[%d|%d] v:%d@[%d]\n", omp_get_thread_num(),activeThreads, b->gameBoard[start].value, start);
 
     for(i = start; i < b->size*b->size; i++)
     {
@@ -71,22 +78,23 @@ void taskBruteForce(Board *b, int start, int numThreads, int threshold)
             i--;
             valid = TRUE;
         }
-        // For non fixed values:
+
+        /* Looks for an unfixed cell */
         if(b->gameBoard[i].fixed == FALSE)
         {
-            //check if there's work for all threads
-            //work will only be generated at indexes multiple of sudoku Square Size
-            if(numThreads != 1 && (((i - start) % b->squareSize) == threshold) && (activeThreads < numThreads))
+            /* Check if there's work for all threads after square size unfixed cells filled and if the number of threads is != from 1 */
+            if(numThreads != 1 && (((i - start) % b->squareSize) == threshold) && (activeThreads <= numThreads))
             {   
-                // Create work to one of other threads if possible
+                /* Create work to one of other threads if possible */
                 if((valid = makeGuess(b, i)) == TRUE)
                 {
                     Board *new = copyBoard(b);
 
-                    // Let all threads know that work will already be created
+                    /* Increment the number of threads that are working */
                     #pragma omp atomic
-                        activeThreads++;
+                    activeThreads++;
 
+                    /* Create a task with that new board */
                     #pragma omp task
                     {
                         taskBruteForce(new, i + 1, numThreads, 0);
@@ -95,21 +103,22 @@ void taskBruteForce(Board *b, int start, int numThreads, int threshold)
                     }
                 }
             } 
-            // Keep current thread working
+            
+            /* Checks if there is a valid guess for that index, to the thread that is currently working */
             if((valid = makeGuess(b, i)) == FALSE)
             {
-                // Backtrack on no other possible way to procede
-                do{
-                    // Erasing supposed values in the way back
+                /* If there's no possible value for that unfixed index, it has to backtrack to the last unfixed cell */
+                do
+                {
+                    /* Put back the 0 value into the unfixed cell and removes masks */
                     if(b->gameBoard[i].fixed == FALSE)
                     {
-                        // Erase guess & masks
                         removeMasks(b, i);
                         b->gameBoard[i].value = 0;
                     }
                     else
                     {
-                        //erasing number of fixed positions saw during the backtrack
+                        /* Decrements the variable that keeps track of the fixed cells on that board */
                         threshold--;
                     }
 
@@ -117,6 +126,7 @@ void taskBruteForce(Board *b, int start, int numThreads, int threshold)
 
                 }while (i >= start && (b->gameBoard[i].fixed == TRUE || b->gameBoard[i].value == b->size));
 
+                /* If the index is < 0, then decrements the number of active threads */
                 if(i < start)
                 { 
                     if(numThreads != 1)
@@ -124,88 +134,101 @@ void taskBruteForce(Board *b, int start, int numThreads, int threshold)
                         #pragma omp atomic
                         activeThreads--;
                     }
-                    
-                    //printf("<<<<[%d|%d]\n", omp_get_thread_num(),activeThreads);
+                
                     return;
                 }
             }
-
         }
         else
         {
-            //incrementing number of fixed positions saw
+            /* Increments the variable that keeps track of the fixed cells on that board */
             threshold++;
         }
     }
 
+    /* In that case, a thread found a solution and has to update the END flag to abort other threads */
     #pragma omp critical (print)
     {
         if(END == FALSE)
         {
             END = TRUE;
-            //printf("Thread: %d\n", omp_get_thread_num());   
+            /* Prints the solution */
             printBoard(b);
         }
     }
-    
+
     return;
 }
 
-
-/************************************
-*      PARALLEL IMPLEMENTATION      *
-************************************/
+/****************************************************************************************************************
+*      Looks for the first unfixed cell, assigns the first possible values to copies of the original board      *
+*     and create tasks to find a solution for the sudoku calling the taskBruteForce() function                  *
+****************************************************************************************************************/
 
 int solver(Board *b)
 {    
     int start_index = 0;
 
-    while(b->gameBoard[start_index].fixed == TRUE)
+    /* Looks for the first unfixed cell */
+    while(b->gameBoard[start_index].fixed == TRUE && start_index < b->size * b->size)
     {
         start_index++;
     }
 
-    #pragma omp parallel shared(activeThreads, b) firstprivate(start_index)
+    /* If the start_index isn't the last cell then the board given isn't completly solved */
+    if(start_index < b->size * b->size)
     {
-        /*Board *new = copyBoard(b);
-        int threshold = 0;
-        int numThreads = omp_get_num_threads();
-
-        numIniActiveThreads = 1;
-        flagStart == b->size;
-
-        #pragma omp single
-            taskBruteForce(new, start_index, numThreads, threshold);*/
-
-        int threshold = 0;
-        int numThreads = omp_get_num_threads();
-        
-        #pragma omp for schedule(dynamic)
-        for (int i = 1; i <= b->size; i++)
+        /* Initiates the parallel code */
+        #pragma omp parallel shared( b) firstprivate(start_index)
         {
-             if(checkValidityMasks(b, start_index, i) == TRUE)
-             {
-                Board *new = copyBoard(b);
+            int threshold = 0;
+            int numThreads = omp_get_num_threads();
+            
+            /* Assigns the possible values of the first unfixed cell and creates a task for each board with each possibility */
+            #pragma omp for schedule(dynamic)
+            for (int i = 1; i <= b->size; i++)
+            {
+                 if(checkValidityMasks(b, start_index, i) == TRUE)
+                 {
+                    Board *new = copyBoard(b);
 
-                #pragma omp atomic
-                numIniActiveThreads++;
+                    /* Increments the number of threads that will be working from the beggining */
+                    #pragma omp atomic
+                    numIniActiveThreads++;
 
-                new->gameBoard[start_index].value = i;
-                //printf("[%d]->%d@%d\n", omp_get_thread_num(), new->gameBoard[start_index].value, start_index);
-                updateMasks(new, start_index);
+                    new->gameBoard[start_index].value = i;
+                    updateMasks(new, start_index);
 
-                #pragma omp task
-                {
-                    taskBruteForce(new, start_index + 1, numThreads, threshold);
-                    freeBoard(new);
-                    free(new);
+                    /* Create tasks */
+                    #pragma omp task
+                    {
+                        taskBruteForce(new, start_index + 1, numThreads, threshold);
+                        freeBoard(new);
+                        free(new);
+                    }
                 }
-            }
 
-            #pragma omp atomic
-            flagStart++;
-            //printf("flagStart solver: %d\n", flagStart);
-        }       
+                /* Flag used to know when all the possibilities were tested and when threads will pick up a board
+                and start performing the taskBruteForce() function */ 
+                #pragma omp atomic
+                flagStart++;
+            }       
+        }
+    }
+    else 
+    {
+        /* If the board read has no unfixed cells, it will be checked if the game board is valid and in that case is printed,
+        otherwise prints Invalid Sudoku */
+        if(checkAllBoard(b) == TRUE)
+        {
+            printBoard(b);
+        }
+        else
+        {
+            printf("Invalid Sudoku\n");
+        }
+        
+        return 0;
     }
 
     if(END == FALSE)
@@ -214,30 +237,37 @@ int solver(Board *b)
     }
 
     return 0;
-
 }
 
-/************************************
-*               MAIN                *
-************************************/
+/****************************************************************************
+*    Allocs a board, fills that board and find a solution if there's one    *
+*                                                                           *
+* Returns: 0 at exit                                                        *                                           
+****************************************************************************/
 int main(int argc, char const *argv[]) {
 
     Board *board = NULL;
 
+    /* Checks if teh user gives the input file */
     if(argv[1] != NULL)
     {
-            board = (Board*)malloc(sizeof(Board));
-            if((fillGameBoard(board, argv[1])) == 0)
-            {
-                solver(board);              
-            //  checkValidity(board, 0, 2);
-                freeBoard(board);
-            }
-            free(board);
+        board = (Board*)malloc(sizeof(Board));
+        if((fillGameBoard(board, argv[1])) == 0)
+        {
+            /* Finds a solution if there's one */
+            solver(board);
+
+            /* Frees memory allocated */      
+            freeBoard(board);
+        }
+
+        /* Frees memory allocated */      
+        free(board);
     }
     else
     {
-            printf("No file was specified!\n");
+        /* If theres's no input file given by the user */
+        printf("No file was specified!\n");
     }
    
     return 0;
