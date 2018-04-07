@@ -12,7 +12,8 @@ int makeGuess(Board *b, int i){
     removeMasks(b, i);
     int value = b->gameBoard[i].value + 1;
 
-    while(value <= b->size){
+    while(value <= b->size)
+    {
 
         if(checkValidity(b, i, value) == TRUE){
             b->gameBoard[i].value = value;
@@ -53,16 +54,16 @@ int taskBruteForce(Board *b, int start, int numThreads, int threshold)
     }
 
     printf(">>>>[%d|%d] v:%d@[%d]\n", omp_get_thread_num(),activeThreads, b->gameBoard[start].value, start);
-    #pragma omp critical (print)
+    /*#pragma omp critical (print)
     {
         printBoard(b);
-    }
+    }*/
     
 
     //printf("ACTIVE THREADS ENTRA: %d therad num: %d\n", activeThreads, omp_get_thread_num());
     /*#pragma omp atomic
         activeThreads++;*/
-    //printf("ACTIVE ENTRA: %d\n", activeThreads);  
+    //printf("ACTIVE ENTRA: %d\n", activeThreads);
 
     for(i = start; i < b->size*b->size; i++)
     {
@@ -85,7 +86,6 @@ int taskBruteForce(Board *b, int start, int numThreads, int threshold)
             { 
                 if((valid = makeGuess(b, i)) == TRUE)
                 {
-                    printf("ENtra para guess\n");
                     Board *new = copyBoard(b);
 
                     #pragma omp atomic
@@ -93,7 +93,7 @@ int taskBruteForce(Board *b, int start, int numThreads, int threshold)
 
                     #pragma omp task
                     {
-                        taskBruteForce(new, i+1, numThreads, 0);
+                        taskBruteForce(new, i + 1, numThreads, 0);
                         freeBoard(new);
                         free(new);
                     }
@@ -102,8 +102,7 @@ int taskBruteForce(Board *b, int start, int numThreads, int threshold)
             
             if((valid = makeGuess(b, i)) == FALSE)
             {
-                printf("ENtra para make\n");
-
+                
                 // Backtrack
                 do{
                     // Erasing supposed values in the way back
@@ -131,15 +130,10 @@ int taskBruteForce(Board *b, int start, int numThreads, int threshold)
                     }
                     
                     printf("<<<<[%d|%d]\n", omp_get_thread_num(),activeThreads);
-
-                    #pragma omp critical (print)
-                    {
-                        printBoard(b);
-                    }
-                    printf("END; %d \n", END);
                     return FALSE;
                 }
             }
+
         }
         else
         {
@@ -147,7 +141,6 @@ int taskBruteForce(Board *b, int start, int numThreads, int threshold)
         }
     }
 
-    printf("CHEGUEI\n");
     #pragma omp critical (print)
     {
         END = TRUE;
@@ -196,7 +189,7 @@ int solver(Board *b)
 
                 #pragma omp task
                 {
-                    taskBruteForce(new, start_index, numThreads, threshold);
+                    taskBruteForce(new, start_index + 1, numThreads, threshold);
                     freeBoard(new);
                     free(new);
                 }
