@@ -59,7 +59,7 @@ int workNeeded(int numThreads)
 {
     int res = FALSE;
 
-    #pragma omp critical (check)
+    #pragma omp critical (checkThreads)
     {
         if(activeThreads <= numThreads)
         {
@@ -73,14 +73,14 @@ int workNeeded(int numThreads)
 }
 
 /******************************************************************************************************************
-*  taskBruteForce - Brute force algorithm with backtracking that generates work for threads that are not working *
+*  taskBruteForce - Brute force algorithm with backtracking that generates work for threads that are not working  *
 *           and finds a solution if there's one, otherwise prints No Solution                                     *
 *                                                                                                                 *
 * Receives: Board *b       - a game board                                                                         *
-*           int start      - position of the board from which the algorithm is applied                            *
+*           int start      - position of the board from which the algorithm starts                                *
 *           int numThreads - number of threads that are executing the program                                     *
-*           int threshold  - threshold that restricts the number of times the program checks if all threads are   *
-*                            working                                                                              *
+*           int threshold  - number of fixed cells count from the start index for each game board                 *
+*                                                                                                                 *
 ******************************************************************************************************************/
 
 void taskBruteForce(Board *b, int start, int numThreads, int threshold)
@@ -95,16 +95,18 @@ void taskBruteForce(Board *b, int start, int numThreads, int threshold)
     /* Flag that is used to know when the threads start working */
     if(flagINI == 0)
     {
-        flagINI = 1;
-
-        /* Keep track of how many threads are working */
-        if(numThreads <= numIniActiveThreads)
+        #pragma omp critical (updateFlagINI)
         {
-            activeThreads = numThreads;
-        }
-        else
-        {
-            activeThreads = numIniActiveThreads;
+            flagINI = 1;
+            /* Keep track of how many threads are working */
+            if(numThreads <= numIniActiveThreads)
+            {
+                activeThreads = numThreads;
+            }
+            else
+            {
+                activeThreads = numIniActiveThreads;
+            }
         }
     }
 
@@ -169,8 +171,10 @@ void taskBruteForce(Board *b, int start, int numThreads, int threshold)
                 {
                     if(numThreads != 1)
                     {
-                        #pragma omp atomic
-                        activeThreads--;
+                        #pragma omp critical (checkThreads)
+                        {
+                            activeThreads--;
+                        }
                     }
                 
                     return;
