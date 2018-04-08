@@ -10,7 +10,7 @@
 /******************************************************
 *   allocBoard - Allocs a game board and its masks    *
 *                                                     *
-* Receives: a game board                              *
+* Receives: Board *b - a game board                   *
 * Returns: 0 on success                               *
 *          -1 on error                                *
 ******************************************************/
@@ -62,11 +62,11 @@ int allocBoard(Board *b)
 /*****************************************************************
 *    copyBoard - Allocs and copies a game board and its masks    *
 *                                                                *
-* Receives: a game board                                         *
+* Receives: Board *original - a game board                       *
 * Returns: a game board                                          *
 *****************************************************************/
 
-Board *copyBoard(Board * original){
+Board *copyBoard(Board *original){
 
     Board * new = (Board *)malloc(sizeof(Board));
     if(new == NULL){
@@ -130,7 +130,7 @@ void removeMasks(Board * b, int i)
 /**********************************************************************
 *       updateMasks - Updates a mask in a row, column and box         * 
 *                                                                     *
-* Receives: Board * b - a game board                                  *
+* Receives: Board *b - a game board                                  *
 *           int i     - position for which the mask is to be updated  *
 **********************************************************************/
 
@@ -158,8 +158,8 @@ void updateMasks(Board * b, int i)
 *                            the given board                                         *
 *                                                                                    *
 * Receives: Board *b  - a game board                                                 *
-*            int index - position in board where validation is to be performed       *
-*            int value - value which is to be checked                                *
+*           int index - position in board where validation is to be performed       *
+*           int value - value which is to be checked                                *
 * Returns: 1 if it's valid                                                           *
 *          0 otherwise                                                               *
 *************************************************************************************/
@@ -189,7 +189,7 @@ int checkValidityMasks(Board *b, int index, int value){
 *    checkEachCell - Checks if there are duplicates in each row, column and box    *
 *                                                                                  *
 * Receives: Board *b  - a game board                                               *
-*            int index - position that determines which row, column and            *
+*           int index - position that determines which row, column and            *
 *                        box are to be checked                                     *
 * Returns: TRUE if there are no duplicates                                         *
 *          FALSE otherwise                                                         *

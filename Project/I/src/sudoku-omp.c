@@ -73,7 +73,7 @@ int workNeeded(int numThreads)
 }
 
 /******************************************************************************************************************
-*  taskBruteForece - Brute force algorithm with backtracking that generates work for threads that are not working *
+*  taskBruteForce - Brute force algorithm with backtracking that generates work for threads that are not working *
 *           and finds a solution if there's one, otherwise prints No Solution                                     *
 *                                                                                                                 *
 * Receives: Board *b       - a game board                                                                         *
