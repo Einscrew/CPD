@@ -11,26 +11,29 @@
 #include <stdio.h>
 #include <string.h>
 
+/* Used to convert matrix indexes to unidimensional arrays */
 #define no(x,y,l) (y*l+x)
 #define row(n,l) (n/l)
 #define col(n,l) (n%l)
 #define off(i,sl) ((i / sl) * sl)
 #define box(i, bs) (((row(i,(bs*bs))/bs) * bs) + (col(i,(bs*bs))/bs))
 
-#define mask(n) ( 1 << (n - 1) )
-#define addmask(m,a) ( m | mask(a) )
+/* Used to add, remove, update and check masks */
+#define mask(n) (1 << (n - 1))
+#define addmask(m,a) (m | mask(a))
 #define valid(v, m) (((mask(v) & m) == 0)?1:0)
-#define removemask(m,r) ( m & (~(mask(r))) )
+#define removemask(m,r) (m & (~(mask(r))))
 
 
-typedef struct Cell{
+typedef struct Cell
+{
     char value;
     char fixed;
 }Cell;
 
 
-typedef struct Board{
-
+typedef struct Board
+{
     Cell *gameBoard;
     long int ** rowMask;
 	long int ** colMask;
@@ -40,20 +43,14 @@ typedef struct Board{
 
 }Board;
 
-
 int allocBoard(Board * b);
 Board * copyBoard(Board* original);
-
 void updateMasks(Board * b, int i);
 void removeMasks(Board * b, int i);
-
-void printMask(int n, int c);
 int checkValidityMasks(Board * b, int size, int value);
-void freeBoard(Board *b);
-
-
+int checkAllBoard(Board *b);
 int fillGameBoard(Board *b, char const* file);
 void printBoard(Board * b);
-void printFixed(Board *b);
+void freeBoard(Board *b);
 
 #endif
