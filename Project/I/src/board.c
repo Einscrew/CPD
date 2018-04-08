@@ -15,30 +15,39 @@ int allocBoard(Board *b)
     b->colMask = (long int **)malloc(sizeof(long int *) * b->size);
     b->boxMask = (long int **)malloc(sizeof(long int *) * b->size);
 
+
+    
+    if(b->gameBoard == NULL || b->rowMask == NULL || b->colMask == NULL || b->boxMask == NULL)
+    {
+        printf("Error creating board!\n");
+        exit(EXIT_FAILURE);
+    }
+
     /* Initializes all masks with 0 */
     for (int i = 0; i < b->size; ++i)
     {
         b->rowMask[i] = (long int *)malloc(sizeof(long int) * 3);
+        b->colMask[i] = (long int *)malloc(sizeof(long int) * 3);
+        b->boxMask[i] = (long int *)malloc(sizeof(long int) * 3);
+
+        if( b->rowMask[i] == NULL || b->colMask[i] == NULL || b->boxMask[i] == NULL){
+            printf("Error creating board!\n");
+            exit(EXIT_FAILURE);
+        }
+
         b->rowMask[i][0]=0;
         b->rowMask[i][1]=0;
         b->rowMask[i][2]=0;
 
-        b->colMask[i] = (long int *)malloc(sizeof(long int) * 3);
         b->colMask[i][0]=0;
         b->colMask[i][1]=0;
         b->colMask[i][2]=0;
 
-        b->boxMask[i] = (long int *)malloc(sizeof(long int) * 3);
         b->boxMask[i][0]=0;
         b->boxMask[i][1]=0;
         b->boxMask[i][2]=0;
     }
 
-    if(b->gameBoard == NULL)
-    {
-        printf("Error creating board!\n");
-        return -1;
-    }
     return 0;
 }
 
@@ -51,6 +60,10 @@ int allocBoard(Board *b)
 Board *copyBoard(Board * original){
 
     Board * new = (Board *)malloc(sizeof(Board));
+    if(new == NULL){
+        printf("Error copying board \n");
+        exit(EXIT_FAILURE);
+    }
 
     new->size = original->size;
     new->squareSize = original->squareSize;
@@ -167,13 +180,17 @@ int checkEachCell(Board *b, int index)
 
     int currb = 0, currl = no(0, l, b->size), currc = no(c, 0, b->size);
 
-    int *existInLine = (int*)malloc(b->size * sizeof(int));
+    int *existInRow = (int*)malloc(b->size * sizeof(int));
     int *existInCol = (int*)malloc(b->size * sizeof(int));
     int *existInBox = (int*)malloc(b->size * sizeof(int));
 
+    if(existInRow == NULL || existInCol == NULL || existInBox  == NULL){
+        printf("Error checking board \n");
+        exit(EXIT_FAILURE);
+    }
     for(i = 0; i < b->size; i++)
     {
-        existInLine[i] = FALSE;
+        existInRow[i] = FALSE;
         existInCol[i] = FALSE;
         existInBox[i] = FALSE;
     }
@@ -187,12 +204,12 @@ int checkEachCell(Board *b, int index)
         /* Checks if are duplciates in the index row */
         if(b->gameBoard[currl].value != 0)
         {
-            if(existInLine[b->gameBoard[currl].value-1] == TRUE)
+            if(existInRow[b->gameBoard[currl].value-1] == TRUE)
             {
                 result = FALSE;
                 break;
             }
-            existInLine[b->gameBoard[currl].value-1] = TRUE;
+            existInRow[b->gameBoard[currl].value-1] = TRUE;
         }
 
         /* Checks if are duplciates in the index column */
@@ -224,7 +241,7 @@ int checkEachCell(Board *b, int index)
         }
     }
 
-    free(existInLine);
+    free(existInRow);
     free(existInCol);
     free(existInBox);
 

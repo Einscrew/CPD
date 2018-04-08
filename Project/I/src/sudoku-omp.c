@@ -252,6 +252,9 @@ int main(int argc, char const *argv[]) {
     if(argv[1] != NULL)
     {
         board = (Board*)malloc(sizeof(Board));
+        if(board == NULL){
+            return 1;
+        }
         if((fillGameBoard(board, argv[1])) == 0)
         {
             /* Finds a solution if there's one */

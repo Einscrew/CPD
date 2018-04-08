@@ -2,16 +2,25 @@ CC=gcc
 FLAGS=-g -Wall
 EXTRA=-fopenmp
 
-NAME=sudoku-omp
+OMP=sudoku-omp
+SERIAL=sudoku-serial
 
-$(NAME): $(NAME).o  board.o
+all: $(SERIAL) $(OMP)
+	
+$(SERIAL): $(SERIAL).o  board.o
 	$(CC) -o $@ $^ $(FLAGS) $(EXTRA)
 
-$(NAME).o: $(NAME).c board.h
+$(SERIAL).o: $(SERIAL).c board.h
+	$(CC) -c $^ $(FLAGS) $(EXTRA)
+
+$(OMP): $(OMP).o  board.o
+	$(CC) -o $@ $^ $(FLAGS) $(EXTRA)
+
+$(OMP).o: $(OMP).c board.h
 	$(CC) -c $^ $(FLAGS) $(EXTRA)
 
 board.o: board.c
 	$(CC) -c $^ $(FLAGS) $(EXTRA)
 
 clean:
-	rm -f *.*o *.h.gch $(NAME)
+	rm -f *.*o *.h.gch $(OMP) $(SERIAL)
