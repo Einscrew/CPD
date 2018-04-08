@@ -1,3 +1,10 @@
+/**************************************************************************
+ *                           sudoku-omp.c                                 *
+ **************************************************************************                                                                   
+ * Sudoku solver program that uses OpenMP to parallelize the algorithm    *
+ * designed in sudoku-serial.c                                            *
+ *************************************************************************/
+
 #include <omp.h>
 #include "sudoku-omp.h"
 
@@ -7,12 +14,14 @@ int flagStart = 0;
 int flagINI = 0;
 int numIniActiveThreads = 0;
 
-/*******************************************************
-*    Makes a guess in a game board at a given index    *
-*                                                      *
-* Returns: TRUE if it finds a valid guess              *
-*          FALSE otherwise                             *
-*******************************************************/
+/**************************************************************************
+*           makeGuess - Makes a guess in a game board at a given index    *
+*                                        			                      *
+* Receives: Board *b - a game board                                       *
+*           int i    - position of the board for the guess to be made     *  
+* Returns: TRUE if it finds a valid guess     		                      *
+*          FALSE otherwise               			                      *
+**************************************************************************/
 
 int makeGuess(Board *b, int i)
 {   
@@ -36,6 +45,16 @@ int makeGuess(Board *b, int i)
     return FALSE;
 }
 
+/**************************************************************************
+*           workNeeded - Checks if all threads are working                *
+*                                        			                      *
+* Receives: int numThreads - number of threads executing the program      *  
+* Returns: TRUE if the number of active threads is less or equal to       *
+*               the number of threads executing the program               *
+*          FALSE otherwise               			                      *
+**************************************************************************/
+
+
 int workNeeded(int numThreads)
 {
     int res = FALSE;
@@ -51,12 +70,17 @@ int workNeeded(int numThreads)
     }
 
     return res;
-
 }
 
 /******************************************************************************************************************
-*           Brute force algorithm with backtracking that generates work for threads that are not working          *
+*  taskBruteForece - Brute force algorithm with backtracking that generates work for threads that are not working *
 *           and finds a solution if there's one, otherwise prints No Solution                                     *
+*                                                                                                                 *
+* Receives: Board *b       - a game board                                                                         *
+*           int start      - position of the board from which the algorithm is applied                            *
+*           int numThreads - number of threads that are executing the program                                     *
+*           int threshold  - threshold that restricts the number of times the program checks if all threads are   *
+*                            working                                                                              *
 ******************************************************************************************************************/
 
 void taskBruteForce(Board *b, int start, int numThreads, int threshold)
@@ -175,11 +199,13 @@ void taskBruteForce(Board *b, int start, int numThreads, int threshold)
 }
 
 /****************************************************************************************************************
-*      Looks for the first unfixed cell, assigns the first possible values to copies of the original board      *
-*     and create tasks to find a solution for the sudoku calling the taskBruteForce() function                  *
+*  solver - Looks for the first unfixed cell, assigns the first possible values to copies of the original board *
+*           and create tasks to find a solution for the sudoku calling the taskBruteForce() function            *
+*                                                                                                               *
+* Receives: Board *b - a game board                                                                             *
 ****************************************************************************************************************/
 
-int solver(Board *b)
+void solver(Board *b)
 {    
     int start_index = 0;
 
@@ -242,7 +268,7 @@ int solver(Board *b)
             printf("Invalid Sudoku\n");
         }
         
-        return 0;
+        return;
     }
 
     if(END == FALSE)
@@ -250,19 +276,21 @@ int solver(Board *b)
         printf("No solution\n");
     }
 
-    return 0;
+    return;
 }
 
-/****************************************************************************
-*    Allocs a board, fills that board and find a solution if there's one    *
-*                                                                           *
-* Returns: 0 at exit                                                        *                                           
-****************************************************************************/
+/*******************************************************************************
+*  main - Allocs a board, fills that board and find a solution if there's one  *
+*                                                                              *
+* Receives: name of the file that contains the sudoku map                      *
+* Returns: 0 at exit                                                           *                                            
+*******************************************************************************/
+
 int main(int argc, char const *argv[]) {
 
     Board *board = NULL;
 
-    /* Checks if teh user gives the input file */
+    /* Checks if the user gives the input file */
     if(argv[1] != NULL)
     {
         board = (Board*)malloc(sizeof(Board));

@@ -1,11 +1,20 @@
+/**************************************************************************
+ *                           sudoku-serial.c                              *
+ **************************************************************************                                                                   
+ * Sudoku solver program that uses a simple bruteforce backtracking       * 
+ * algorithm in a standard serial implementation                          *
+ *************************************************************************/
+
 #include "sudoku-serial.h"
 
-/*******************************************************
-*    Makes a guess in a game board at a given index    *
-*                                        			   *
-* Returns: TRUE if it finds a valid guess     		   *
-*          FALSE otherwise               			   *
-*******************************************************/
+/**************************************************************************
+*           makeGuess - Makes a guess in a game board at a given index    *
+*                                        			                      *
+* Receives: Board *b - a game board                                       *
+*           int i    - position of the board for the guess to be made     *  
+* Returns: TRUE if it finds a valid guess     		                      *
+*          FALSE otherwise               			                      *
+**************************************************************************/
 
 int makeGuess(Board *b, int i)
 {	
@@ -30,8 +39,11 @@ int makeGuess(Board *b, int i)
 }
 
 /****************************************************************************************
-*    Brute force algorithm that receives a board and finds a solution if there's one    *            										   	    *
-*****************************************************************************************/
+*    bruteForce - Brute force algorithm that receives a board and finds a solution if   *
+*                 there's one                                                           *
+*                                                                                       *
+* Receives: Board *b - a game board        										   	    *
+****************************************************************************************/
 
 void bruteForce(Board *b){
 
@@ -79,21 +91,23 @@ void bruteForce(Board *b){
 	printBoard(b);
 }
 
-/****************************************************************************
-*    Allocs a board, fills that board and find a solution if there's one    *
-*                                        			   						*
-* Returns: 0 at exit     		   											*        								    
-****************************************************************************/
+/*********************************************************************************
+*    main - Allocs a board, fills that board and finds a solution if there's one * 
+*                                        			   						     *
+* Returns: 0 at exit     		   											     *        								    
+*********************************************************************************/
 
 int main(int argc, char const *argv[]) {
 
     Board *board = NULL;
 
-    /* Checks if teh user gives the input file */
+    /* Checks if the user gives the input file */
     if(argv[1] != NULL)
     {
         board = (Board*)malloc(sizeof(Board));
-        
+        if(board == NULL){
+            return 1;
+        }
         if((fillGameBoard(board, argv[1])) == 0)
         {
         	/* Finds a solution if there's one */

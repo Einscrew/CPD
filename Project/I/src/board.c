@@ -1,11 +1,19 @@
+/**************************************************************************
+ *                                board.c                                 *
+ **************************************************************************                                                                   
+ * Functions related to the board implementation used in the sudoku       *
+ * solver for both kinds of implementations, serial and parallel          *
+ *************************************************************************/
+
 #include "board.h"
 
-/******************************************
-*    Allocs a game board and its masks    *
-*                                         *
-* Returns: 0 on success                   *
-*          -1 on error                    *
-******************************************/
+/******************************************************
+*   allocBoard - Allocs a game board and its masks    *
+*                                                     *
+* Receives: a game board                              *
+* Returns: 0 on success                               *
+*          -1 on error                                *
+******************************************************/
 
 int allocBoard(Board *b)
 {
@@ -51,11 +59,12 @@ int allocBoard(Board *b)
     return 0;
 }
 
-/*****************************************************
-*    Allocs and copies a game board and its masks    *
-*                                                    *
-* Returns: a game board                              *
-*****************************************************/
+/*****************************************************************
+*    copyBoard - Allocs and copies a game board and its masks    *
+*                                                                *
+* Receives: a game board                                         *
+* Returns: a game board                                          *
+*****************************************************************/
 
 Board *copyBoard(Board * original){
 
@@ -91,9 +100,12 @@ Board *copyBoard(Board * original){
     return new;
 }
 
-/*****************************************************
-*       Removes a mask in a row, column and box      *                           *
-*****************************************************/
+/**********************************************************************
+*       removeMasks - Removes a mask in a row, column and box         *
+*                                                                     * 
+* Receives: Board * b - a game board                                  *
+*           int i     - position for which the mask is to be removed  *
+**********************************************************************/
 
 void removeMasks(Board * b, int i)
 {
@@ -115,9 +127,12 @@ void removeMasks(Board * b, int i)
     b->boxMask[box][m_index] = removemask((b->boxMask[box][m_index]), value);
 }
 
-/*****************************************************
-*       Updates a mask in a row, column and box      *                           *
-*****************************************************/
+/**********************************************************************
+*       updateMasks - Updates a mask in a row, column and box         * 
+*                                                                     *
+* Receives: Board * b - a game board                                  *
+*           int i     - position for which the mask is to be updated  *
+**********************************************************************/
 
 void updateMasks(Board * b, int i)
 {
@@ -132,15 +147,19 @@ void updateMasks(Board * b, int i)
     int m_index = b->gameBoard[i].value/32;
     value -= (m_index*32);
     
-    /* Adds masks in the respectvie row, column and box */
+    /* Adds masks in the respective row, column and box */
     b->rowMask[row][m_index] = addmask(b->rowMask[row][m_index], value);
     b->colMask[col][m_index] = addmask(b->colMask[col][m_index], value);
     b->boxMask[box][m_index] = addmask(b->boxMask[box][m_index], value);
 }
 
-/************************************************************************************
-*       Checks if a certain value is valid in a given index at the given board       *
+/*************************************************************************************
+*       checkValidityMasks - Checks if a certain value is valid in a given index at  *
+*                            the given board                                         *
 *                                                                                    *
+* Receives: Board *b  - a game board                                                 *
+*            int index - position in board where validation is to be performed       *
+*            int value - value which is to be checked                                *
 * Returns: 1 if it's valid                                                           *
 *          0 otherwise                                                               *
 *************************************************************************************/
@@ -166,12 +185,15 @@ int checkValidityMasks(Board *b, int index, int value){
     return ret;
 }
 
-/**************************************************************************
-*       Checks if there are duplicates in each row, column and box        *
-*                                                                         *
-* Returns: TRUE if there are no duplicates                                *
-*          FALSE otherwise                                                *
-**************************************************************************/
+/***********************************************************************************
+*    checkEachCell - Checks if there are duplicates in each row, column and box    *
+*                                                                                  *
+* Receives: Board *b  - a game board                                               *
+*            int index - position that determines which row, column and            *
+*                        box are to be checked                                     *
+* Returns: TRUE if there are no duplicates                                         *
+*          FALSE otherwise                                                         *
+***********************************************************************************/
 
 int checkEachCell(Board *b, int index)
 {
@@ -201,7 +223,7 @@ int checkEachCell(Board *b, int index)
         currl = no(i, l, b->size);
         currb = no(bcol+i, bline, b->size);
 
-        /* Checks if are duplciates in the index row */
+        /* Checks if are duplicates in the index row */
         if(b->gameBoard[currl].value != 0)
         {
             if(existInRow[b->gameBoard[currl].value-1] == TRUE)
@@ -212,7 +234,7 @@ int checkEachCell(Board *b, int index)
             existInRow[b->gameBoard[currl].value-1] = TRUE;
         }
 
-        /* Checks if are duplciates in the index column */
+        /* Checks if are duplicates in the index column */
         if(b->gameBoard[currc].value != 0)
         {
             if(existInCol[b->gameBoard[currc].value-1] == TRUE)
@@ -223,7 +245,7 @@ int checkEachCell(Board *b, int index)
             existInCol[b->gameBoard[currc].value-1] = TRUE;
         }
 
-        /* Checks if are duplciates in the index box */
+        /* Checks if are duplicates in the index box */
         if(b->gameBoard[currb].value != 0)
         {
             if(existInBox[b->gameBoard[currb].value -1] == TRUE)
@@ -248,12 +270,14 @@ int checkEachCell(Board *b, int index)
     return result;
 }
 
-/*********************************************************************************************************
-*        Checks for each cell in a given game board has no duplicates in each row, column and box        *
-*                                                                                                        *
-* Returns: TRUE if there are no duplicates                                                               *
-*          FALSE otherwise                                                                               *
-*********************************************************************************************************/
+/*************************************************************************************************
+*    checkAllBoard - Checks for each cell in a given game board has no duplicates in each row,   *
+*                    column and box                                                              *
+*                                                                                                *
+* Receives: Board *b - a game board                                                              *
+* Returns: TRUE if there are no duplicates                                                       *
+*          FALSE otherwise                                                                       *
+*************************************************************************************************/
 
 int checkAllBoard(Board *b)
 {
@@ -270,12 +294,14 @@ int checkAllBoard(Board *b)
     return TRUE;
 }
 
-/***********************************************************************
-*       Fills the given game board according to the input file         *
-*                                                                      *
-* Returns: 0 on success                                                *
-*          -1 on error                                                 *
-***********************************************************************/
+/*****************************************************************************
+*   fillGameBoard - Fills the given game board according to the input file   *
+*                                                                            *
+* Receives: Board *b         - a game board                                  *
+*           char const* file - name of file to be read                       *
+* Returns: 0 on success                                                      *
+*          -1 on error                                                       *
+*****************************************************************************/
 
 int fillGameBoard(Board *board, char const* file)
 {
@@ -381,9 +407,11 @@ int fillGameBoard(Board *board, char const* file)
     return 0;
 }
 
-/**********************************
-*       Prints a game board       *
-**********************************/
+/**********************************************
+*       printBoard - Prints a game board      *
+*                                             *
+* Receives: Board *b - a game board           *
+**********************************************/
 
 void printBoard(Board *b)
 {
@@ -400,9 +428,11 @@ void printBoard(Board *b)
     }
 }
 
-/*********************************************
-*       Frees a game board and its masks     *
-*********************************************/
+/****************************************************
+*    freeBoard - Frees a game board and its masks   *
+*                                                   *
+* Receives: Board *b - a game board                 *
+****************************************************/
 
 void freeBoard(Board *b)
 {

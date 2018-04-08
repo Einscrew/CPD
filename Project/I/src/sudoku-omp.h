@@ -1,3 +1,9 @@
+/**************************************************************************
+ *                           sudoku-omp.h                                 *
+ **************************************************************************                                                                   
+ * Declaration of functions used in sudoku-omp.c                          *
+ *************************************************************************/
+
 #ifndef STRATEGIES
 #define STRATEGIES
 
@@ -5,6 +11,6 @@
 
 void taskBruteForce(Board *b, int start, int numThreads, int threshold);
 void printMasks(long int ** m, int index);
-int solver(Board *b);
+void solver(Board *b);
 
 #endif
