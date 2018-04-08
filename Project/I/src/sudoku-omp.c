@@ -36,6 +36,24 @@ int makeGuess(Board *b, int i)
     return FALSE;
 }
 
+int workNeeded(int numThreads)
+{
+    int res = FALSE;
+
+    #pragma omp critical (check)
+    {
+        if(activeThreads <= numThreads)
+        {
+            /* Increment the number of threads that are working */
+            activeThreads++;
+            res = TRUE;
+        }
+    }
+
+    return res;
+
+}
+
 /******************************************************************************************************************
 *           Brute force algorithm with backtracking that generates work for threads that are not working          *
 *           and finds a solution if there's one, otherwise prints No Solution                                     *
@@ -83,16 +101,12 @@ void taskBruteForce(Board *b, int start, int numThreads, int threshold)
         if(b->gameBoard[i].fixed == FALSE)
         {
             /* Check if there's work for all threads after square size unfixed cells filled and if the number of threads is != from 1 */
-            if(numThreads != 1 && (((i - start) % b->squareSize) == threshold) && (activeThreads <= numThreads))
+            if(numThreads != 1 && (((i - start) % b->squareSize) == threshold) && workNeeded(numThreads))
             {   
                 /* Create work to one of other threads if possible */
                 if((valid = makeGuess(b, i)) == TRUE)
                 {
                     Board *new = copyBoard(b);
-
-                    /* Increment the number of threads that are working */
-                    #pragma omp atomic
-                    activeThreads++;
 
                     /* Create a task with that new board */
                     #pragma omp task
@@ -128,7 +142,7 @@ void taskBruteForce(Board *b, int start, int numThreads, int threshold)
 
                 /* If the index is < 0, then decrements the number of active threads */
                 if(i < start)
-                { 
+                {
                     if(numThreads != 1)
                     {
                         #pragma omp atomic
