@@ -1,3 +1,4 @@
+#include <mpi.h>
 #include "sudoku-serial.h"
 
 /*******************************************************
@@ -90,26 +91,42 @@ int main(int argc, char const *argv[]) {
     Board *board = NULL;
 
     /* Checks if teh user gives the input file */
-    if(argv[1] != NULL)
-    {
-        board = (Board*)malloc(sizeof(Board));
-        
-        if((fillGameBoard(board, argv[1])) == 0)
+    MPI_Status status;
+    int id, p;
+                
+    // MPI_INIT & MPI_COMM
+    MPI_Init (&argc, &argv);
+    
+    MPI_Comm_rank (MPI_COMM_WORLD, &id);
+    MPI_Comm_size (MPI_COMM_WORLD, &p);
+
+    if(!id){
+        if(argv[1] != NULL)
         {
-        	/* Finds a solution if there's one */
-        	bruteForce(board);
 
-        	/* Frees memory allocated */      
-            freeBoard(board);
+            board = (Board*)malloc(sizeof(Board));
+
+            if((fillGameBoard(board, argv[1])) == 0)
+            {
+
+                //Share board
+                /* Finds a solution if there's one */
+                bruteForce(board);
+
+                /* Frees memory allocated */      
+                freeBoard(board);
+            }
+
+            /* Frees memory allocated */
+            free(board);
+
         }
+        else
+        {
+            /* If theres's no input file given by the user */
+            printf("No file was specified!\n");
 
-        /* Frees memory allocated */
-        free(board);
-    }
-    else
-    {
-    	/* If theres's no input file given by the user */
-        printf("No file was specified!\n");
+        }
     }
     
     return 0;

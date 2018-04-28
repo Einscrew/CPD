@@ -1,7 +1,0 @@
-a) Start by compiling the code above, don’t forget to add the “-fopenmp”. Execute
-this program with a different number of threads (by setting OMP NUM THREADS).
-b) Add the “nowait” clause to the for directive in line 9. Did the output change?
-Why?
-c) Add a barrier between lines 13 and 14:
-#pragma omp barrier
-Compare the output with a) and b).
