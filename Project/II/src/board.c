@@ -263,10 +263,64 @@ int fillGameBoard(Board *board, char const* file)
     return 0;
 }
 
+
+
+
+int compressBoard(Board * b, int fixed, int index, char ** r){
+    int area = b->size*b->size;
+    char * comp = malloc( (sizeof(int)+sizeof(char)) * area);
+    int current = 0;
+    //Put size
+    memcpy(&comp[current], &(b->squareSize), sizeof(char));
+    current+=sizeof(char);
+
+    if(fixed){
+        for (int i = 0; i < area; ++i)
+        {
+            if(b->gameBoard[i].fixed){
+                memcpy(&comp[current], &i, sizeof(int));
+                current+=sizeof(int);
+                memcpy(&comp[current], &(b->gameBoard[i].value), sizeof(char));
+                current+=sizeof(char);
+            }
+        }
+        *r = comp;
+    }
+    return current;
+}
+
+
+void decompressBoard(Board * b, char * r, int s){
+    int current = 0, index = 0, i , area ;
+
+    memcpy(&(b->squareSize), r, sizeof(char)); 
+    current += sizeof(char);
+
+
+    b->size = b->squareSize*b->squareSize;
+    area = b->size * b->size;
+    allocBoard(b);
+    for ( i = 0; i < area; ++i)
+    {
+        b->gameBoard[i].value = 0;
+        b->gameBoard[i].fixed = FALSE;
+    }
+    
+    while(current < s)
+    {
+        memcpy(&index, &r[current], sizeof(int));
+        current += sizeof(int);
+        memcpy(&(b->gameBoard[index].value), &r[current], sizeof(char));
+        current += sizeof(char);
+        b->gameBoard[index].fixed = TRUE;
+        //TODO: update masks
+    }
+
+}
+
 /**********************************
 *       Prints a game board       *
 **********************************/
-
 void printBoard(Board *b)
 {
     int i = 0;

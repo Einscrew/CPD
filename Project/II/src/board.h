@@ -39,6 +39,7 @@ typedef struct Board{
     long int ** boxMask;	
     char size;
     char squareSize;
+    int fixed;
 
 }Board;
 
@@ -48,6 +49,8 @@ void updateMasks(Board * b, int i);
 void removeMasks(Board * b, int i);
 int checkValidityMasks(Board * b, int size, int value);
 int fillGameBoard(Board *b, char const* file);
+int compressBoard(Board * board, int fixed, int index, char ** r);
+void decompressBoard(Board * b, char * r, int s);
 void printBoard(Board * b);
 void freeBoard(Board *b);
 

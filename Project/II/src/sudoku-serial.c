@@ -1,4 +1,5 @@
-#include <mpi.h>
+//#include <mpi.h>
+#include <unistd.h>
 #include "sudoku-serial.h"
 
 /*******************************************************
@@ -89,7 +90,8 @@ void bruteForce(Board *b){
 int main(int argc, char const *argv[]) {
 
     Board *board = NULL;
-
+    char * r;
+    int s;
     /* Checks if teh user gives the input file */
     MPI_Status status;
     int id, p;
@@ -110,12 +112,26 @@ int main(int argc, char const *argv[]) {
             {
 
                 //Share board
-                /* Finds a solution if there's one */
-                bruteForce(board);
+                r = NULL;
+                s = compressBoard(board, 1, -1, &r);
+/*
+                for (int i = 0; i < s; ++i)                {
+                    printf("%d", r[i]);
+                    if((i+1)%5==0){
+                        printf("|");
+                    }
+                }
+                printf("\n...................................................\n");*/
+               
 
-                /* Frees memory allocated */      
+                //VVVVVVV
                 freeBoard(board);
-            }
+
+                decompressBoard(board, r, s);
+                printBoard(board);
+                freeBoard(board);
+
+            }       
 
             /* Frees memory allocated */
             free(board);
@@ -128,6 +144,17 @@ int main(int argc, char const *argv[]) {
 
         }
     }
+
+    MPI_Bcast(r, s, MPI_BYTE, 0, MPI_COMM_WORLD);
+
+
+    if(id == 1){
+        decompressBoard(board, r, s);
+    }
+    
+
+
+    MPI_Finalize();
     
     return 0;
 }
