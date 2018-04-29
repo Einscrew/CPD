@@ -125,10 +125,10 @@ int main(int argc, char const *argv[]) {
                
 
                 //VVVVVVV
-                freeBoard(board);
+                //freeBoard(board);
 
-                decompressBoard(board, r, s);
-                printBoard(board);
+                //decompressBoard(board, r, s);
+                
                 freeBoard(board);
 
             }       
@@ -148,10 +148,14 @@ int main(int argc, char const *argv[]) {
     MPI_Bcast(r, s, MPI_BYTE, 0, MPI_COMM_WORLD);
 
 
-    if(id == 1){
+    if(id){
         decompressBoard(board, r, s);
+        printBoard(board);
+        freeBoard(board);
+        free(board);
     }
-    
+
+    free(r);
 
 
     MPI_Finalize();
