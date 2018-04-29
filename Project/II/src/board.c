@@ -268,31 +268,38 @@ int fillGameBoard(Board *board, char const* file)
 
 int compressBoard(Board * b, int fixed, int index, char ** r){
     int area = b->size*b->size;
-    char * comp = malloc( (sizeof(int)+sizeof(char)) * area);
+    char * comp = malloc( (sizeof(int)+sizeof(char)) * area + ((fixed)?2:1)*sizeof(char));
     int current = 0;
-    //Put size
-    memcpy(&comp[current], &(b->squareSize), sizeof(char));
-    current+=sizeof(char);
 
     if(fixed){
-        for (int i = 0; i < area; ++i)
-        {
-            if(b->gameBoard[i].fixed){
-                memcpy(&comp[current], &i, sizeof(int));
-                current+=sizeof(int);
-                memcpy(&comp[current], &(b->gameBoard[i].value), sizeof(char));
-                current+=sizeof(char);
-            }
-        }
-        *r = comp;
+        //Put size
+        memcpy(&comp[current], &(b->squareSize), sizeof(char));
+        current+=sizeof(char);
     }
+
+    for (int i = 0; i < area; ++i)
+    {
+        if(!fixed && i <= index)
+            break;
+
+        if((b->gameBoard[i].fixed && fixed) || (!b->gameBoard[i].fixed && !fixed)){
+            memcpy(&comp[current], &i, sizeof(int));
+            current+=sizeof(int);
+            memcpy(&comp[current], &(b->gameBoard[i].value), sizeof(char));
+            current+=sizeof(char);
+        }
+    }
+    comp[current]=-1;
+    current++;
+    *r = comp;
+    
     return current;
 }
 
 
 void decompressBoard(Board * b, char * r, int s){
     int current = 0, index = 0, i , area ;
-
+    
     memcpy(&(b->squareSize), r, sizeof(char)); 
     current += sizeof(char);
 

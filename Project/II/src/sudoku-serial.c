@@ -1,4 +1,4 @@
-//#include <mpi.h>
+#include <mpi.h>
 #include <unistd.h>
 #include "sudoku-serial.h"
 
@@ -87,11 +87,12 @@ void bruteForce(Board *b){
 * Returns: 0 at exit     		   											*        								    
 ****************************************************************************/
 
-int main(int argc, char const *argv[]) {
+int main(int argc, char *argv[]) {
 
-    Board *board = NULL;
+    Board *board = (Board*)malloc(sizeof(Board));;
     char * r;
-    int s;
+    char * final;
+    int s= 5*16+1;
     /* Checks if teh user gives the input file */
     MPI_Status status;
     int id, p;
@@ -106,29 +107,24 @@ int main(int argc, char const *argv[]) {
         if(argv[1] != NULL)
         {
 
-            board = (Board*)malloc(sizeof(Board));
-
             if((fillGameBoard(board, argv[1])) == 0)
             {
-
-                //Share board
                 r = NULL;
                 s = compressBoard(board, 1, -1, &r);
-/*
+
                 for (int i = 0; i < s; ++i)                {
                     printf("%d", r[i]);
-                    if((i+1)%5==0){
+                    if((i+5)%5==0){
                         printf("|");
                     }
                 }
-                printf("\n...................................................\n");*/
+                printf("\n...................................................\n");
                
-
+                /*
+                bruteforce();
+                compressBoard(board, 1, 1, &final);
+                */
                 //VVVVVVV
-                //freeBoard(board);
-
-                //decompressBoard(board, r, s);
-                
                 freeBoard(board);
 
             }       
@@ -144,12 +140,22 @@ int main(int argc, char const *argv[]) {
 
         }
     }
+    else
+        r = malloc(sizeof(int)*sizeof(char)*16+sizeof(char));
+
+    
+    MPI_Barrier(MPI_COMM_WORLD);
 
     MPI_Bcast(r, s, MPI_BYTE, 0, MPI_COMM_WORLD);
 
 
-    if(id){
-        decompressBoard(board, r, s);
+    if(id==1){
+        int i = 0;
+        while(r[i] != -1){
+            i++;
+        }
+        
+        decompressBoard(board, r, i);
         printBoard(board);
         freeBoard(board);
         free(board);
@@ -157,6 +163,7 @@ int main(int argc, char const *argv[]) {
 
     free(r);
 
+    //MPI_Recv
 
     MPI_Finalize();
     

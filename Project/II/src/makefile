@@ -1,4 +1,4 @@
-CC=gcc
+CC=mpicc
 FLAGS=-g -Wall
 EXTRA=-fopenmp
 
