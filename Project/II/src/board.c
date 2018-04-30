@@ -270,13 +270,8 @@ int compressBoard(Board * b, int fixed, int index, char ** r){
     int current = 0, area = b->size*b->size;
 
     int cnt = 0;
-    char * comp = malloc( (sizeof(int)+sizeof(char)) * area + ((fixed)?1:0)*sizeof(char));
+    char * comp = malloc( (sizeof(int)+sizeof(char)) * area);
 
-    if(fixed){
-        //Put size
-        memcpy(&comp[current], &(b->squareSize), sizeof(char));
-        current += sizeof(char);
-    }
 
     for (int i = 0; i < area; ++i)
     {
@@ -298,11 +293,7 @@ int compressBoard(Board * b, int fixed, int index, char ** r){
 
 void decompressBoard(Board * b, char * r, int s){
     int current = 0, index = 0, i , area;
-    
-    memcpy(&(b->squareSize), r, sizeof(char)); 
-    current += sizeof(char);
 
-    b->size = b->squareSize*b->squareSize;
     area = b->size * b->size;
     allocBoard(b);
     for ( i = 0; i < area; ++i)

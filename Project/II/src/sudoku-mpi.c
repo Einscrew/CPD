@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
 
     Board *board = (Board*)malloc(sizeof(Board));;
     char * r;
-    char * final;
+    char * first = malloc(sizeof(char)+sizeof(int));
     int s = 0 ;
     /* Checks if teh user gives the input file */
     MPI_Status status;
@@ -111,12 +111,15 @@ int main(int argc, char *argv[]) {
             {
                 r = NULL;
                 s = compressBoard(board, 1, -1, &r);
-
+                memcpy(first, &board->squareSize, sizeof(char));
+                memcpy(&first[sizeof(char)], &s, sizeof(int));
+                
+                
                 /*
-                printf(">%d|",r[0]);
-                for (long int i = 1; i < s; ++i)                {
+                printf(">%d-%d|\n>",first[0], s);
+                for (long int i = 0; i < s; ++i){
                     printf("%d", r[i]);
-                    if((i)%5==0){
+                    if((i+1)%5==0){
                         printf("|");
                     }
                 }
@@ -124,9 +127,11 @@ int main(int argc, char *argv[]) {
                 decompressBoard(board, r, s);
                 printBoard(board);
                 printf("\n...................................................\n");
+                
                 bruteforce();
                 compressBoard(board, 1, 1, &final);
                 */
+
                 //VVVVVVV
                 freeBoard(board);
 
@@ -146,9 +151,16 @@ int main(int argc, char *argv[]) {
        
     //verificar isto
     MPI_Barrier(MPI_COMM_WORLD);
-    MPI_Bcast(&s, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-    if(id){
+    MPI_Bcast(first, sizeof(char)+sizeof(int), MPI_BYTE, 0, MPI_COMM_WORLD);
+
+   if(id){
+
+        memcpy(&board->squareSize, first, sizeof(char));
+        board->size = board->squareSize*board->squareSize;
+
+        memcpy(&s, &first[sizeof(char)], sizeof(int));
+
         r = malloc(s);
     }
     
