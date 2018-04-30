@@ -50,7 +50,7 @@ void removeMasks(Board * b, int i);
 int checkValidityMasks(Board * b, int size, int value);
 int fillGameBoard(Board *b, char const* file);
 int compressBoard(Board * board, int fixed, int index, char ** r);
-void decompressBoard(Board * b, char * r, int s);
+void decompressBoard(Board * b, char * r);
 void printBoard(Board * b);
 void freeBoard(Board *b);
 

@@ -2,7 +2,7 @@ CC=mpicc
 FLAGS=-g -Wall
 EXTRA=-fopenmp
 
-NAME=sudoku-serial
+NAME=sudoku-mpi
 
 $(NAME): $(NAME).o  board.o
 	$(CC) -o $@ $^ $(FLAGS) $(EXTRA)
