@@ -270,12 +270,12 @@ int compressBoard(Board * b, int fixed, int index, char ** r){
     int current = 0, area = b->size*b->size;
 
     int cnt = 0;
-    char * comp = malloc( (sizeof(int)+sizeof(char)) * area + sizeof(int) + ((fixed)?1:0)*sizeof(char));
+    char * comp = malloc( (sizeof(int)+sizeof(char)) * area + ((fixed)?1:0)*sizeof(char));
 
     if(fixed){
         //Put size
         memcpy(&comp[current], &(b->squareSize), sizeof(char));
-        current += sizeof(char)+sizeof(int);
+        current += sizeof(char);
     }
 
     for (int i = 0; i < area; ++i)
@@ -288,23 +288,19 @@ int compressBoard(Board * b, int fixed, int index, char ** r){
             current+=sizeof(int);
             memcpy(&comp[current], &(b->gameBoard[i].value), sizeof(char));
             current+=sizeof(char);
-            cnt++;
         }
     }
-    memcpy(&comp[sizeof(char)], &cnt, sizeof(int));
     *r = comp;
     
     return current;
 }
 
 
-void decompressBoard(Board * b, char * r){
-    int current = 0, index = 0, i , area , s;
+void decompressBoard(Board * b, char * r, int s){
+    int current = 0, index = 0, i , area;
     
     memcpy(&(b->squareSize), r, sizeof(char)); 
     current += sizeof(char);
-    memcpy(&s, &r[current], sizeof(int)); 
-    current += sizeof(int);
 
     b->size = b->squareSize*b->squareSize;
     area = b->size * b->size;
@@ -315,14 +311,17 @@ void decompressBoard(Board * b, char * r){
         b->gameBoard[i].fixed = FALSE;
     }
     
-    while(current <= s*(sizeof(char)+sizeof(int)))
+    
+    while(current < s)
     {
         memcpy(&index, &r[current], sizeof(int));
         current += sizeof(int);
         memcpy(&(b->gameBoard[index].value), &r[current], sizeof(char));
         current += sizeof(char);
         b->gameBoard[index].fixed = TRUE;
-        //TODO: update masks
+        
+        //TODO: update masks <------------------------------
+
     }
 
 }

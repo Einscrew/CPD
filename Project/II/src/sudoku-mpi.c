@@ -92,7 +92,7 @@ int main(int argc, char *argv[]) {
     Board *board = (Board*)malloc(sizeof(Board));;
     char * r;
     char * final;
-    long int s= 5*(81*81+1);
+    int s = 0 ;
     /* Checks if teh user gives the input file */
     MPI_Status status;
     int id, p;
@@ -110,18 +110,18 @@ int main(int argc, char *argv[]) {
             if((fillGameBoard(board, argv[1])) == 0)
             {
                 r = NULL;
-                int ts = compressBoard(board, 1, -1, &r);
+                s = compressBoard(board, 1, -1, &r);
 
                 /*
-                printf(">%d|%d%d%d%d|",r[0], r[1] , r[2], r[3], r[4]);
-                for (long int i = 5; i < ts; ++i)                {
+                printf(">%d|",r[0]);
+                for (long int i = 1; i < s; ++i)                {
                     printf("%d", r[i]);
-                    if((i+1)%5==0){
+                    if((i)%5==0){
                         printf("|");
                     }
                 }
                 printf("\n");
-                decompressBoard(board, r);
+                decompressBoard(board, r, s);
                 printBoard(board);
                 printf("\n...................................................\n");
                 bruteforce();
@@ -143,18 +143,32 @@ int main(int argc, char *argv[]) {
 
         }
     }
-    else
-        r = malloc((sizeof(int)+sizeof(char))*(81*81+1));
-
-    
+       
+    //verificar isto
     MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Bcast(&s, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
-//  printf("s %d\n", s);
-    MPI_Bcast(r, s+1, MPI_BYTE, 0, MPI_COMM_WORLD);
+    if(id){
+        r = malloc(s);
+    }
+    
+    //printf("s %d\n", s);
 
+    MPI_Bcast(r, s, MPI_BYTE, 0, MPI_COMM_WORLD);
 
     if(id==1){
-        decompressBoard(board, r);
+        /*
+        printf(">%d|",r[0]);
+        for (long int i = 1; i < s; ++i){
+            printf("%d", r[i]);
+            if((i)%5==0){
+                printf("|");
+            }
+        }
+        printf("\n");
+        fflush(stdout);
+        */
+        decompressBoard(board, r, s);
         printf("%d\n", board->squareSize);
         printBoard(board);
         freeBoard(board);
