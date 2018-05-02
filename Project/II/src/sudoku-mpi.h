@@ -3,6 +3,6 @@
 
 #include "board.h"
 
-void bruteForce(Board *b);
+void bruteForce(Board *b, int i, int id);
 
 #endif

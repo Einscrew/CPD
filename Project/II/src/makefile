@@ -1,6 +1,8 @@
 CC=mpicc
 FLAGS=-g -Wall
 EXTRA=-fopenmp
+FILE=2x2.txt
+P=2
 
 NAME=sudoku-mpi
 
@@ -15,3 +17,6 @@ board.o: board.c
 
 clean:
 	rm -f *.*o *.h.gch $(NAME)
+
+run:
+	mpirun -np $(P) ./$(NAME) ../tests/$(FILE)

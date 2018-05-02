@@ -21,7 +21,7 @@
 
 /* Used to add, remove, update and check masks */
 #define mask(n) ( 1 << (n - 1) )
-#define addmask(m,a) ( m | mask(a) )
+#define addmask(m,v) ( m | mask(v) )
 #define valid(v, m) (((mask(v) & m) == 0)?1:0)
 #define removemask(m,r) ( m & (~(mask(r))) )
 
@@ -52,6 +52,8 @@ int fillGameBoard(Board *b, char const* file);
 int compressBoard(Board * board, int fixed, int index, char ** r);
 void decompressBoard(Board * b, char * r, int s);
 void printBoard(Board * b);
+void printBoardT(Board *b, int id);
+void printBM(Board *b);
 void freeBoard(Board *b);
 
 #endif
