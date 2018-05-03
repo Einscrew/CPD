@@ -3,6 +3,6 @@
 
 #include "board.h"
 
-void bruteForce(Board *b, int i, int id);
+int bruteForce(Board *b, int start, int id, int p, char * fid, MPI_Request * r);
 
 #endif

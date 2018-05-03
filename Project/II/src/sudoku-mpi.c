@@ -4,9 +4,11 @@
 #include "sudoku-mpi.h"
 
 #define FINISH 123
-//#define PRINT 
+#define PRINT 231
 char found = FALSE;
-Board * finalb = NULL;
+Board * finalBoard = NULL;
+char print = FALSE;
+
 /*******************************************************
 *    Makes a guess in a game board at a given index    *
 *                                        			   *
@@ -40,9 +42,14 @@ int makeGuess(Board *b, int i)
 *    Brute force algorithm that receives a board and finds a solution if there's one    *            										   	    *
 *****************************************************************************************/
 
-void bruteForce(Board *b, int start, int id){
+int bruteForce(Board *b, int start, int id, int p, char * fid, MPI_Request *r){
+            
+    char trash = FALSE;
+	int i = start, valid = TRUE, flag = FALSE;
 
-	int i = start, valid = TRUE;
+    MPI_Status s;
+
+    //if MPI_Test)
 
 	for(i = start; i < b->size*b->size; i++)
 	{
@@ -76,18 +83,57 @@ void bruteForce(Board *b, int start, int id){
 				if(i < start)
                 {
 					//printf("No solution\n");
-					return;
+					return FALSE;
 				}
 			}
 		}
-        if (found == TRUE){
-            return;
+
+        MPI_Test(r, &flag, &s);
+        if (flag != 0){
+            printf("OLLLLLLLLLLL\n");
+            fflush(stdout);
+            if(!id){
+                if(!print){
+                    print = TRUE;
+                    trash = TRUE;
+                }
+                MPI_Send(&trash, 1, MPI_CHAR, *fid, PRINT, MPI_COMM_WORLD);
+                trash = FALSE;
+
+            }
+            found=TRUE;
+            MPI_Send(fid, 1, MPI_CHAR, (id+1)%p, FINISH, MPI_COMM_WORLD);
+            return FALSE;
         }
 	}
 	/* If the solution is find, print it */
-    found = TRUE;
 
-    finalb = b;
+
+    // send Solution Alert
+    //int MPI_Send(const void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm)
+    printf("[%d]FINISH\n", id);
+    fflush(stdout);
+            
+    found = TRUE;
+    *fid = id;
+    MPI_Send(fid, 1, MPI_CHAR, (id+1)%p, FINISH, MPI_COMM_WORLD);
+    printf("[%d]Alert\n", id);
+
+
+    if(id){
+        MPI_Recv(&trash, 1, MPI_CHAR, 0, PRINT, MPI_COMM_WORLD, &s);
+        if(trash)printBoard(b);
+    }
+    else
+        printBoard(b);
+
+    printf("[%d]print\n", id);
+ 
+
+
+    //RECEIVE PRINT ORDER
+
+    return TRUE;
 }
 
 void checkPossibilities(Board * b, int cindex, int index, int * possible){
@@ -119,12 +165,12 @@ void checkPossibilities(Board * b, int cindex, int index, int * possible){
     }
 }
 
-void work(Board * b, int cindex, int index, int * possible, int id, int p){
+void work(Board * b, int cindex, int index, int * possible, int id, int p, char *fid, MPI_Request *r){
 
     if(cindex > b->size*b->size-1)
         return;
     if(b->gameBoard[cindex].fixed){
-        work(b, cindex+1, index+1, possible, id, p);
+        work(b, cindex+1, index+1, possible, id, p, fid, r);
     }
     else{
         for (int value = 1; value <= b->size; value++)
@@ -137,13 +183,13 @@ void work(Board * b, int cindex, int index, int * possible, int id, int p){
             
                 if(cindex == index){
                     if(*possible%p == id){
-                        #ifdef PRINT 
+                        #ifdef OUT 
                         printf("[%d]-Will process %d @ index: %d\n", id, *possible, cindex);
                         #endif
                         b->gameBoard[cindex].value = value;
                      
                         updateMasks(b, cindex);     
-                        bruteForce(b, cindex+1, id);
+                        bruteForce(b, cindex+1, id, p, fid, r);
                         removeMasks(b, cindex);
                         b->gameBoard[cindex].value = 0;
                     }
@@ -152,7 +198,7 @@ void work(Board * b, int cindex, int index, int * possible, int id, int p){
                 else{
                     b->gameBoard[cindex].value = value;
                     updateMasks(b, cindex);
-                    work(b, cindex+1, index, possible, id, p);
+                    work(b, cindex+1, index, possible, id, p, fid, r);
                     removeMasks(b, cindex);
                     b->gameBoard[cindex].value = 0;
                 }
@@ -165,7 +211,13 @@ void work(Board * b, int cindex, int index, int * possible, int id, int p){
 int check(Board *b, int id, int p){
 
     int possible = 0;
-    int index = 0;
+    int index = 0, flag = 0;
+    char fid = FALSE;
+
+    char trash = FALSE;
+
+    MPI_Request r;
+    MPI_Status s;
 
     double t = -MPI_Wtime();
     //IF BOARD COMPLETE ...........................................
@@ -173,7 +225,7 @@ int check(Board *b, int id, int p){
     while(p > possible){
         possible = 0;
         checkPossibilities(b, 0, index, &possible);
-        #ifdef PRINT 
+        #ifdef OUT 
         printf("[%d]-trying: %d - p: %d\n",id, index, possible);
         #endif
         index++;
@@ -184,88 +236,53 @@ int check(Board *b, int id, int p){
     }
     t += MPI_Wtime();
     index--;
-    #ifdef PRINT 
+    #ifdef OUT 
     printf("[%d]-Index: %d\n\tPossibilities: %d\tTime: %lf\n",id,  index, possible, t);
     #endif
     
     if(possible != 0){
         possible = 0;
-        #ifdef PRINT 
+        #ifdef OUT 
         printf("[%d]-Going to work: index: %d\tpossible: %d\tid: %d\tp: %d\n",id,  index, possible, id, p);
         #endif
 
-        work(b, 0, index, &possible, id, p);
+        //int MPI_Irecv(void *buf, int count, MPI_Datatype datatype, int source, int tag, MPI_Comm comm, MPI_Request *request)
+        MPI_Irecv(&fid, 1, MPI_CHAR, (id==0)?p-1:id-1, FINISH, MPI_COMM_WORLD, &r );
+        work(b, 0, index, &possible, id, p, &fid, &r);
+
+        
+        printf("[%d]No more Work\n", id);
+        fflush(stdout);
+        
+
+        while(!flag){
+            MPI_Test(&r, &flag, &s);
+            if (flag != 0){
+
+                if(!id){
+                    if(!print){
+                        print = TRUE;
+                        trash = TRUE;
+                    }
+                    MPI_Send(&trash, 1, MPI_CHAR, fid, PRINT, MPI_COMM_WORLD);
+                    trash = FALSE;
+
+                }
+                found=TRUE;
+                MPI_Send(&fid, 1, MPI_CHAR, (id+1)%p, FINISH, MPI_COMM_WORLD);
+            }
+        }
+        printf("[%d]Leaving\n", id);
+        fflush(stdout);
+
     }else{   
-        #ifdef PRINT 
+        #ifdef OUT 
         printf("[%d]-Didn't work\n", id );
         #endif
     }
 
     return possible;
 
-}
-
-
-void listening(int id, int p){
-    char * ir = malloc(sizeof(char)*p);
-    char * is = malloc(sizeof(char)*p);
-
-    MPI_Request * pendingr = (MPI_Request*)malloc(sizeof(MPI_Request)*p);
-    MPI_Request * pendings = (MPI_Request*)malloc(sizeof(MPI_Request)*p);
-
-    pendings[id]=MPI_REQUEST_NULL;
-    pendingr[id]=MPI_REQUEST_NULL;
-
-    MPI_Status s, * arrS = (MPI_Status*)malloc(sizeof(MPI_Status)*p);;
-    
-    int index = 0, f = 0, j;
-
-    for(index = 0; index < p ; index++){
-        ir[index] = FALSE;
-        if(index != id){
-            MPI_Irecv(&ir[index], 1, MPI_BYTE, index, FINISH, MPI_COMM_WORLD, &pendingr[index]);
-        }
-    }
-    
-    while(found==FALSE){
-        for(index = 0; index < p ; index++){
-            if(index != id){
-                MPI_Test(&pendingr[index], &f, &s);
-                if(f != 0 && found == FALSE){
-                    found = TRUE;
-                    for (j = 0; j < p; ++j){
-                        if(j != index && j != id){
-                            MPI_Cancel(&pendingr[j]);
-                        }
-                    }
-                    break;
-                }
-            }
-            else if(found == TRUE){
-                for(index = 0; index < p ; index++){
-                    if(index != id){
-                        is[index] = TRUE;
-                        MPI_Isend(&is[index], 1, MPI_BYTE, index, FINISH, MPI_COMM_WORLD, &pendings[index]);
-                    }
-                }
-                printf("[%d] will wait ", id);
-                MPI_Waitall(p, pendings, arrS);
-        
-                printBoardT(finalb, id);
-                fflush(stdout);
-                break;
-            }
-
-        }
-        
-        //update()
-    }
-    free(ir);
-    free(is);
-    free(pendingr);
-    free(pendings);
-    free(arrS);
-    return;
 }
 
 
@@ -358,20 +375,8 @@ int main(int argc, char *argv[]) {
 
     free(r); //<--------------------------------------------------------------------------
 
-    //omp_set_num_threads(2);
-    #pragma omp parallel sections
-    {
-        #pragma omp section
-        {
-            check(board, id, p);
-        }
+    check(board, id, p);
 
-        #pragma omp section
-        {
-            listening(id, p);
-        }
-    }
-    
     freeBoard(board);
     free(board);
     //c
