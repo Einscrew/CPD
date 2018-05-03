@@ -1,7 +1,12 @@
 #include <mpi.h>
+#include <omp.h>
 #include <unistd.h>
 #include "sudoku-mpi.h"
 
+#define FINISH 123
+//#define PRINT 
+char found = FALSE;
+Board * finalb = NULL;
 /*******************************************************
 *    Makes a guess in a game board at a given index    *
 *                                        			   *
@@ -70,14 +75,19 @@ void bruteForce(Board *b, int start, int id){
 				/* If the index is < 0, then there's no solution for the gicen sudoku */
 				if(i < start)
                 {
-					printf("No solution\n");
+					//printf("No solution\n");
 					return;
 				}
 			}
 		}
+        if (found == TRUE){
+            return;
+        }
 	}
 	/* If the solution is find, print it */
-	printBoardT(b, id);
+    found = TRUE;
+
+    finalb = b;
 }
 
 void checkPossibilities(Board * b, int cindex, int index, int * possible){
@@ -119,12 +129,17 @@ void work(Board * b, int cindex, int index, int * possible, int id, int p){
     else{
         for (int value = 1; value <= b->size; value++)
         {
+            if (found == TRUE){
+                return;
+            }
             if(checkValidityMasks(b, cindex, value) == TRUE)
             {
             
                 if(cindex == index){
                     if(*possible%p == id){
+                        #ifdef PRINT 
                         printf("[%d]-Will process %d @ index: %d\n", id, *possible, cindex);
+                        #endif
                         b->gameBoard[cindex].value = value;
                      
                         updateMasks(b, cindex);     
@@ -141,7 +156,6 @@ void work(Board * b, int cindex, int index, int * possible, int id, int p){
                     removeMasks(b, cindex);
                     b->gameBoard[cindex].value = 0;
                 }
-
             }
         }
         
@@ -149,6 +163,7 @@ void work(Board * b, int cindex, int index, int * possible, int id, int p){
 }
 
 int check(Board *b, int id, int p){
+
     int possible = 0;
     int index = 0;
 
@@ -158,7 +173,9 @@ int check(Board *b, int id, int p){
     while(p > possible){
         possible = 0;
         checkPossibilities(b, 0, index, &possible);
+        #ifdef PRINT 
         printf("[%d]-trying: %d - p: %d\n",id, index, possible);
+        #endif
         index++;
         if(possible == 0){
             break;
@@ -166,17 +183,89 @@ int check(Board *b, int id, int p){
         
     }
     t += MPI_Wtime();
-    printf("[%d]-Index: %d\n\tPossibilities: %d\tTime: %lf\n",id,  --index, possible, t);
+    index--;
+    #ifdef PRINT 
+    printf("[%d]-Index: %d\n\tPossibilities: %d\tTime: %lf\n",id,  index, possible, t);
+    #endif
     
     if(possible != 0){
         possible = 0;
+        #ifdef PRINT 
         printf("[%d]-Going to work: index: %d\tpossible: %d\tid: %d\tp: %d\n",id,  index, possible, id, p);
+        #endif
+
         work(b, 0, index, &possible, id, p);
-    }else
+    }else{   
+        #ifdef PRINT 
         printf("[%d]-Didn't work\n", id );
+        #endif
+    }
 
     return possible;
 
+}
+
+
+void listening(int id, int p){
+    char * ir = malloc(sizeof(char)*p);
+    char * is = malloc(sizeof(char)*p);
+
+    MPI_Request * pendingr = (MPI_Request*)malloc(sizeof(MPI_Request)*p);
+    MPI_Request * pendings = (MPI_Request*)malloc(sizeof(MPI_Request)*p);
+
+    pendings[id]=MPI_REQUEST_NULL;
+    pendingr[id]=MPI_REQUEST_NULL;
+
+    MPI_Status s, * arrS = (MPI_Status*)malloc(sizeof(MPI_Status)*p);;
+    
+    int index = 0, f = 0, j;
+
+    for(index = 0; index < p ; index++){
+        ir[index] = FALSE;
+        if(index != id){
+            MPI_Irecv(&ir[index], 1, MPI_BYTE, index, FINISH, MPI_COMM_WORLD, &pendingr[index]);
+        }
+    }
+    
+    while(found==FALSE){
+        for(index = 0; index < p ; index++){
+            if(index != id){
+                MPI_Test(&pendingr[index], &f, &s);
+                if(f != 0 && found == FALSE){
+                    found = TRUE;
+                    for (j = 0; j < p; ++j){
+                        if(j != index && j != id){
+                            MPI_Cancel(&pendingr[j]);
+                        }
+                    }
+                    break;
+                }
+            }
+            else if(found == TRUE){
+                for(index = 0; index < p ; index++){
+                    if(index != id){
+                        is[index] = TRUE;
+                        MPI_Isend(&is[index], 1, MPI_BYTE, index, FINISH, MPI_COMM_WORLD, &pendings[index]);
+                    }
+                }
+                printf("[%d] will wait ", id);
+                MPI_Waitall(p, pendings, arrS);
+        
+                printBoardT(finalb, id);
+                fflush(stdout);
+                break;
+            }
+
+        }
+        
+        //update()
+    }
+    free(ir);
+    free(is);
+    free(pendingr);
+    free(pendings);
+    free(arrS);
+    return;
 }
 
 
@@ -193,7 +282,6 @@ int main(int argc, char *argv[]) {
     char * first = malloc(sizeof(char)+sizeof(int));
     int s = 0 ;
     /* Checks if teh user gives the input file */
-    MPI_Status status;
     int id, p;
     double t = 0;
 
@@ -267,11 +355,22 @@ int main(int argc, char *argv[]) {
             printBoard(board);
         }*/
     }
-    check(board, id, p);
 
+    free(r); //<--------------------------------------------------------------------------
 
-    free(r);
+    //omp_set_num_threads(2);
+    #pragma omp parallel sections
+    {
+        #pragma omp section
+        {
+            check(board, id, p);
+        }
 
+        #pragma omp section
+        {
+            listening(id, p);
+        }
+    }
     
     freeBoard(board);
     free(board);
