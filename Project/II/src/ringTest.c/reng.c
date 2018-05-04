@@ -33,63 +33,66 @@ int main(int argc, char *argv[]) {
     MPI_Request rr;
     MPI_Request rs;
     MPI_Status s;
-    char fid, idcopy;
+    char fid, copyid;
     char pid = -1, finish = 0;
     int from = (id==0)?(p-1):(id-1);
     
-    if(f==0){
-        //printf("[%d]NOT FINISH\n", id );
-        while(finish == 0){
-            MPI_Irecv(&fid, 1, MPI_CHAR, from, FINISH, MPI_COMM_WORLD, &rr );
-            while(!flagr){
-                MPI_Test(&rr,&flagr,&s);
-            }
-            recv++;
-            printf("[%d]recebeu fid: %d\n", id, fid);
-            MPI_Send(&fid, 1, MPI_CHAR, (id+1)%p, FINISH, MPI_COMM_WORLD);
-            printf("[%d]enviou fid: %d para: %d\n", id, fid, (id+1)%p);
-            send++;
-            if(pid == fid)
-                finish++;
+    
+    copyid = id;
 
-            if(pid == -1)
-                pid=fid;
+    if(f==1) MPI_Isend(&copyid, 1, MPI_CHAR, (id+1)%p, FINISH, MPI_COMM_WORLD, &rs);
+    MPI_Irecv(&fid, 1, MPI_CHAR, from, FINISH, MPI_COMM_WORLD, &rr );
+    while(recv == 0){
+        //trabalhjo.amawokdawd
+        //awidampwd
+        MPI_Test(&rr ,&flagr ,&s);
+        recv = (flagr==0)?recv:1;
+    }
+    //printf("[%d] recebeu fid: %d\n", id, fid );
+    if(f==1){
+        while(send == 0){
+            //trabalhjo.amawokdawd
+            //awidampwd
+            MPI_Test(&rs ,&flags ,&s);
+            send = (flags==0)?send:1;
         }
     }
-    else
-    {
-        idcopy = id;
-        while(finish == 0){
-            MPI_Irecv(&fid, 1, MPI_CHAR, from, FINISH, MPI_COMM_WORLD, &rr );
-            MPI_Send(&idcopy, 1, MPI_CHAR, (id+1)%p, FINISH, MPI_COMM_WORLD, &rs);
-            while(recv == 0 || send == 0){
-                
-                MPI_Test(&rr ,&flagr ,&s);
-                recv = (flagr==0)?recv:1;
-                MPI_Test(&rs ,&flags ,&s);
-                send = (flagr==0)?send:1;
-            }
-            printf("[%d]recebeu fid: %d\n", id, fid);
-            printf("[%d]enviou idcopy: %d para: %d\n", id, idcopy, (id+1)%p);
-            if(pid == fid)
-                finish++;
 
-            if(pid == -1)
-                pid=fid;
-            if (fid > idcopy)
-            {
-                idcopy = fid;
+    if(fid >= id || f == 0){
+        if(fid == id) printf("1st msg by [%d]\n", id );
+        if(fid > pid)
+            pid = fid;
+    
+        //printf("[%d] vai tentar enviar fid: %d\n", id, fid );
+        MPI_Send(&fid, 1, MPI_CHAR, (id+1)%p, FINISH, MPI_COMM_WORLD);
+        //printf("[%d] enviou  fid: %d\n", id, fid );
+    }
+    
+    do{
+        MPI_Recv(&fid, 1,MPI_CHAR, from, FINISH, MPI_COMM_WORLD, &s);
+        //printf("[%d] recebeu fid: %d ---\n", id, fid );
+        if(fid == pid || fid == id){
+            if(fid == pid) finish = 1;
+            if(pid != id){
+                MPI_Send(&fid, 1, MPI_CHAR, (id+1)%p, FINISH, MPI_COMM_WORLD);
+                //printf("[%d] enviou  fid: %d ---\n", id, fid );
+            }
+            pid = fid;
+        }else if(fid > pid){
+            printf("[%d]dawdaw fid:%d pid:%d\n",  id, fid, pid);
+            pid = fid;
+            //passas o que recebeste e espertas por outra igual pid > id = fid
+            if(fid >= id){
+                MPI_Send(&fid, 1, MPI_CHAR, (id+1)%p, FINISH, MPI_COMM_WORLD);
+                //printf("[%d] enviou  fid: %d ---\n", id, fid );
             }
         }
-        if(fid == id){
-            printf("[%d] sou eu fid: %d\n", id, fid);
-        }
+    }while(finish == 0);
 
+    if(fid == id){
+        printf("\n[%d]IHNAWDIAWND\n\n", id);
     }
     MPI_Barrier(MPI_COMM_WORLD); 
-
-
-
     MPI_Finalize();
     
     return 0;
