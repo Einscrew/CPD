@@ -42,6 +42,31 @@ int allocBoard(Board *b)
     return 0;
 }
 
+int makeCopyBoard(Board* dst, Board * src){
+
+    dst->size = src->size;
+    dst->squareSize = src->squareSize;
+    
+    /* Copies the original board to the new board */
+    for(int i = 0 ; i < src->size*src->size ; i++){
+        dst->gameBoard[i].value = src->gameBoard[i].value;
+        dst->gameBoard[i].fixed = src->gameBoard[i].fixed;
+        
+        dst->rowMask[row(i, src->size)][0] = src->rowMask[row(i, src->size)][0];
+        dst->rowMask[row(i, src->size)][1] = src->rowMask[row(i, src->size)][1];
+        dst->rowMask[row(i, src->size)][2] = src->rowMask[row(i, src->size)][2];
+
+        dst->colMask[col(i, src->size)][0] = src->colMask[col(i, src->size)][0];
+        dst->colMask[col(i, src->size)][1] = src->colMask[col(i, src->size)][1];
+        dst->colMask[col(i, src->size)][2] = src->colMask[col(i, src->size)][2];
+
+        dst->boxMask[box(i, src->squareSize)][0] = src->boxMask[box(i, original->squareSize)][0];
+        dst->boxMask[box(i, src->squareSize)][1] = src->boxMask[box(i, original->squareSize)][1];
+        dst->boxMask[box(i, src->squareSize)][2] = src->boxMask[box(i, original->squareSize)][2];
+    }
+    return 1;
+
+}
 /*****************************************************
 *    Allocs and copies a game board and its masks    *
 *                                                    *

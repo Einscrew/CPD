@@ -68,41 +68,43 @@ int bruteForce(Board *b, int start, int id, int p, char * fid, MPI_Request *r){
 		if(b->gameBoard[i].fixed == FALSE)
 		{
             /* Checks if there is a valid guess for that index */
-            /*
-            if((valid = makeGuess(  , i)) == TRUE){
+            if((valid = makeGuess( b , i)) == TRUE){
                 Test(wr, &flag, &s);
                 if(flag != 0){
-                    //SEND WORK DIRECTLY TO...
+                    //SEND WORK to neighbor (id+1)%p
                     //MAKE MPI_Irec() to keep listening 4 other requests
                     //flag = 0
 
-                    (valid = makeGuess(b, i)) == FALSE; 
+                    valid = makeGuess(b, i); 
                 }
-            }*/
-			if((valid = makeGuess(b, i)) == FALSE)
-			{
+
+            /*
+            */
+            }
+            if(valid == FALSE)
+            {
 
                 /* If there's no possible value for that unfixed index, it has to backtrack to the last unfixed cell */
-				do
-				{
+                do
+                {
                     /* Put back the 0 value into the unfixed cell and removes masks */
-					if(b->gameBoard[i].fixed == FALSE)
-					{
+                    if(b->gameBoard[i].fixed == FALSE)
+                    {
                         removeMasks(b, i);
                         b->gameBoard[i].value = 0;
-					}
+                    }
 
-					i--;
+                    i--;
 
-				}while (i >= start && (b->gameBoard[i].fixed == TRUE || b->gameBoard[i].value == b->size));
+                }while (i >= start && (b->gameBoard[i].fixed == TRUE || b->gameBoard[i].value == b->size));
 
-				/* If the index is < 0, then there's no solution for the gicen sudoku */
-				if(i < start)
+                /* If the index is < 0, then there's no solution for the gicen sudoku */
+                if(i < start)
                 {
-					//printf("No solution\n");
-					return FALSE;
-				}
-			}
+                    //printf("No solution\n");
+                    return FALSE;
+                }
+            }
 		}
 
         MPI_Test(r, &flag, &s);
@@ -201,37 +203,105 @@ void termination(int id, int p,  MPI_Request *rr, char *fid){
     }
 
 }
+int check(Board *board, int id, int p){
 
-int check(Board *b, int id, int p){
+    char state = ((id)?(FALSE:TRUE)), laststate = state;
+
+    MPI_Irecv(ctrlMsg, &controlmsgReq);
+    MPI_Irecv(board)
+    while(!stop){
+        if(state){
+
+            bruteForce(); // update laststate
+            state = FALSE;
+            //Request Board
+            MPI_Isend();
+        }else{
+            while(!state){
+
+                MPI_Test(boardReq, &flag,); //PROBE.......
+                if(flag){
+                    MPI_Recv();
+                    state = TRUE;
+                    break;
+                }
+                flag = FALSE;
+                MPI_Test(controlmsgReq, &flag,&s);
+                if(flag){
+                    if(ctrlMsg == 0){
+                         if(lastCtrlMsg == 0){
+                            stop = TRUE;
+                         }
+                         lastCtrlMsg = 0;
+                    }else{
+                        lastCtrlMsg = -1;
+                        nao parei
+                    }
+
+                    if(stop && eu que parei){
+                        nao manda
+                        sai
+                        no solution
+                    }
+                    //Update MSG???
+                    updateCtrlMsg(&ctrlMsg, &laststate, state);
+                    MPI_Send(&ctrlMsg,);
+                    
+                    if(stop){
+                        //waitSend())
+                        break;
+                    }else
+                        MPI_Irecv(&ctrlMsg, &controlmsgReq);
+                }
+            }
+        }
+    }
+}
+/*
+int check(Board *board, int id, int p){
 
     char fid = FALSE;
+    int idcopy = id;
     int size;
     MPI_Status s;
     
     printf("[%d] @ check()\n",id);
 
-    MPI_Request r;
+    MPI_Request r, myworkrequest;
     MPI_Irecv(&fid, 1, MPI_CHAR, (id==0)?p-1:id-1, FINISH, MPI_COMM_WORLD, &r );
-    
+    Board * b = copyBoard(board); //allocation
+
     while(!stopwork || !found){
         if(haveBoard){
             printf("[%d] have board\n", id);
             bruteForce(b, startindex, id, p, &fid, &r);
-            if(found == FALSE && stopwork == FALSE)
+            if(found == FALSE && stopwork == FALSE){
                 haveBoard = FALSE;
+                //copy original board
+                makeCopyBoard(b, board);
+            
+            }
             
         }else{
             printf("[%d] don't have board\n", id);
             
             //send request to neighbors
-            //MPI_SEND____
+            MPI_Isend(&idcopy, 1, MPI_INT, (id+1)%p, ASK_WORK, MPI_COMM_WORLD, &myworkrequest);
+            
             while(){
                 //CHECK for new board on probe
                 MPI_Iprobe(MPI_ANY_SOURCE, GET_WORK, MPI_COMM_WORLD, &flag, &s);
                 if(flag != 0){
                     MPI_Get_count(&s, MPI_BYTE, &size);
                     r = malloc(size); //<......................size in BYTES???????
-                    MPI_Recv(r, size, MPI_BYTE, s.MPI_SOURCE );
+                    MPI_Irecv(r, size, MPI_BYTE, s.MPI_SOURCE, GET_WORK, MPI_COMM_WORLD, &rw);
+                    decompressBoard(b, r, size);
+                }
+
+                //Receive neighbor request and pass it
+                MPI_Test(rw, &flag ,&s);
+                if(flag == TRUE){
+                    MPI_Isend();
                 }
 
                 //Test any other neighbor with no work
@@ -256,7 +326,7 @@ int check(Board *b, int id, int p){
 
     return 0;
 
-}
+}*/
 
 /****************************************************************************
 *    Allocs a board, fills that board and find a solution if there's one    *
