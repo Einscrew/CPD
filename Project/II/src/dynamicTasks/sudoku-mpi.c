@@ -10,11 +10,17 @@
 #define ASK_WORK 444
 
 char found = FALSE;
+char ihavesol = FALSE;
 Board * finalBoard = NULL;
 char print = FALSE;
-char stopwork = FALSE;
+char stop = FALSE;
 char haveBoard = FALSE;
+char state = 0;
+char laststate = 0;
+char iStoped = FALSE;
 int startindex = 0;
+int ctrlMsg = 0;
+int lastCtrlMsg = 0;
 
 /*******************************************************
 *    Makes a guess in a game board at a given index    *
@@ -45,16 +51,32 @@ int makeGuess(Board *b, int i)
     return FALSE;
 }
 
+
+void updateCtrlMsg(){
+    if(state != laststate){
+        if(state == TRUE){
+            ctrlMsg++;
+        }
+        else{
+            ctrlMsg--;
+        }
+        iStoped = (ctrlMsg == 0)? TRUE:FALSE;
+    }
+    laststate = state;
+}
+
 /****************************************************************************************
 *    Brute force algorithm that receives a board and finds a solution if there's one    *            										   	    *
 *****************************************************************************************/
 
-int bruteForce(Board *b, int start, int id, int p, char * fid, MPI_Request *r){
-	int i = start, valid = TRUE, flag = FALSE;
-
+int bruteForce(Board *b, int start, int id, int p, char * fid, MPI_Request *ctrlMsgReq){
+	int i = start, valid = TRUE, flag = FALSE, size, right = (id+1)%p;
+    char * compressed = NULL;
     MPI_Status s;
+    MPI_Request boardReq;
 
     //if MPI_Test)
+    MPI_Irecv(&neighbor, MPI_BYTE, right, ASK_WORK, MPI_COMM_WORLD, &boardReq, &s);
 
 	for(i = start; i < b->size*b->size; i++)
 	{
@@ -69,13 +91,20 @@ int bruteForce(Board *b, int start, int id, int p, char * fid, MPI_Request *r){
 		{
             /* Checks if there is a valid guess for that index */
             if((valid = makeGuess( b , i)) == TRUE){
-                Test(wr, &flag, &s);
+                Test(boardReq, &flag, &s);
                 if(flag != 0){
+                    //Request of neighbor received
                     //SEND WORK to neighbor (id+1)%p
                     //MAKE MPI_Irec() to keep listening 4 other requests
-                    //flag = 0
 
+                    size = compressBoard(board, 0, i, &compressed);
+
+                    MPI_Send(&compressed, size, MPI_BYTE, right, GET_WORK, MPI_COMM_WORLD);
+                    free(compressed);
+
+                    MPI_Irecv(&neighbor, MPI_BYTE, right, ASK_WORK, MPI_COMM_WORLD, &boardReq, &s);
                     valid = makeGuess(b, i); 
+                    flag = 0;
                 }
 
             /*
@@ -107,12 +136,22 @@ int bruteForce(Board *b, int start, int id, int p, char * fid, MPI_Request *r){
             }
 		}
 
-        MPI_Test(r, &flag, &s);
-        if (flag != 0){
-            printf("[%d] terminated bruteForce\n", id);
-            fflush(stdout);
-            stopwork = TRUE;
-            return FALSE;
+        //Tests if someone found the solution
+        MPI_Test(ctrlMsgReq, &flag, &s);
+        if(flag){
+
+            if(ctrlMsg != -1)
+                updateCtrlMsg();
+            else
+                stop = TRUE;
+
+            MPI_Send(&ctrlMsg, 1, MPI_INT, right, CTRL_MSG, MPI_COMM_WORLD, &ctrlMsgReq);
+                
+            if(stop){
+                //waitSend())
+                break;
+            }else
+                MPI_Irecv(&ctrlMsg, 1, MPI_INT, left , CTRL_MSG, MPI_COMM_WORLD, &ctrlMsgReq);
         }
 
 
@@ -120,12 +159,13 @@ int bruteForce(Board *b, int start, int id, int p, char * fid, MPI_Request *r){
 	/* If the solution is find, print it */
 
 
-    // send Solution Alert
+    //send Solution Alert
     //int MPI_Send(const void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm)
     printf("[%d]FINISH\n", id);
     fflush(stdout);
 
     finalBoard = b;
+    ihavesol = TRUE;
     found = TRUE;
     return TRUE;
 }
@@ -205,53 +245,76 @@ void termination(int id, int p,  MPI_Request *rr, char *fid){
 }
 int check(Board *board, int id, int p){
 
-    char state = ((id)?(FALSE:TRUE)), laststate = state;
 
-    MPI_Irecv(ctrlMsg, &controlmsgReq);
-    MPI_Irecv(board)
+    MPI_Request ctrlMsgReq, boardReq;
+    MPI_Status s;
+
+    char neighbor, stop = FALSE;
+    int left = ((id==0)?(p-1:id-1)), right = (id+1)%p;
+
+    state = ((id)?(FALSE:TRUE));
+    laststate = state;
+
+    MPI_Irecv(&ctrlMsg, 1, MPI_INT, left , CTRL_MSG, MPI_COMM_WORLD, &ctrlMsgReq);
+    
     while(!stop){
+        //Means that I have work to do
         if(state){
-
+                     
             bruteForce(); // update laststate
+
             state = FALSE;
-            //Request Board
-            MPI_Isend();
+            
+            //Only requests another board if no one have found a solution yet
+            if(stop == FALSE){
+                //Request Board
+                MPI_Isend(&neighbor, MPI_BYTE, from, ASK_WORK, MPI_COMM_WORLD, &boardReq, &s);
+            }       
+
         }else{
+            //Waits for another board
             while(!state){
 
-                MPI_Test(boardReq, &flag,); //PROBE.......
+                Test(boardReq, &flag, &s); //PROBE.......
                 if(flag){
+                    //Receive board
                     MPI_Recv();
                     state = TRUE;
                     break;
                 }
                 flag = FALSE;
-                MPI_Test(controlmsgReq, &flag,&s);
+                //Checks if someone found the solution or if there's no more work and thre's no solution
+                MPI_Test(ctrlMsgReq, &flag,&s);
                 if(flag){
                     if(ctrlMsg == 0){
-                         if(lastCtrlMsg == 0){
-                            stop = TRUE;
-                         }
-                         lastCtrlMsg = 0;
+                        //Means that everyone tried all possibilities and thre's no solution
+                        if(lastCtrlMsg == 0){
+                           stop = TRUE;
+                        }
+                        lastCtrlMsg = 0;
+                    }else if (ctrlMsg == -1){
+                        //Someone found the solution
+                        stop = TRUE;
                     }else{
                         lastCtrlMsg = -1;
-                        nao parei
+                        iStoped = FALSE;
+                    }
+                    //If I was the last one to find that there's no more possibilities than print no solutiom
+                    if(stop && iStoped){
+                        //nao manda
+                        printf("No solution\n");
+                        return;
                     }
 
-                    if(stop && eu que parei){
-                        nao manda
-                        sai
-                        no solution
-                    }
-                    //Update MSG???
-                    updateCtrlMsg(&ctrlMsg, &laststate, state);
-                    MPI_Send(&ctrlMsg,);
+                    //Update control message 
+                    updateCtrlMsg();
+                    MPI_Send(&ctrlMsg, 1, MPI_INT, right, CTRL_MSG, MPI_COMM_WORLD, &ctrlMsgReq);
                     
                     if(stop){
                         //waitSend())
                         break;
                     }else
-                        MPI_Irecv(&ctrlMsg, &controlmsgReq);
+                        MPI_Irecv(&ctrlMsg, &ctrlMsgReq);
                 }
             }
         }
