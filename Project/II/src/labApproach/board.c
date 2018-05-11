@@ -42,6 +42,31 @@ int allocBoard(Board *b)
     return 0;
 }
 
+int makeCopyBoard(Board* dst, Board * src){
+
+    dst->size = src->size;
+    dst->squareSize = src->squareSize;
+    
+    /* Copies the original board to the new board */
+    for(int i = 0 ; i < src->size*src->size ; i++){
+        dst->gameBoard[i].value = src->gameBoard[i].value;
+        dst->gameBoard[i].fixed = src->gameBoard[i].fixed;
+        
+        dst->rowMask[row(i, src->size)][0] = src->rowMask[row(i, src->size)][0];
+        dst->rowMask[row(i, src->size)][1] = src->rowMask[row(i, src->size)][1];
+        dst->rowMask[row(i, src->size)][2] = src->rowMask[row(i, src->size)][2];
+
+        dst->colMask[col(i, src->size)][0] = src->colMask[col(i, src->size)][0];
+        dst->colMask[col(i, src->size)][1] = src->colMask[col(i, src->size)][1];
+        dst->colMask[col(i, src->size)][2] = src->colMask[col(i, src->size)][2];
+
+        dst->boxMask[box(i, src->squareSize)][0] = src->boxMask[box(i, original->squareSize)][0];
+        dst->boxMask[box(i, src->squareSize)][1] = src->boxMask[box(i, original->squareSize)][1];
+        dst->boxMask[box(i, src->squareSize)][2] = src->boxMask[box(i, original->squareSize)][2];
+    }
+    return 1;
+
+}
 /*****************************************************
 *    Allocs and copies a game board and its masks    *
 *                                                    *
@@ -267,12 +292,15 @@ int fillGameBoard(Board *board, char const* file)
 
 
 int compressBoard(Board * b, int fixed, int index, char ** r){
-    int current = 0, area = b->size*b->size, i = 0;
+    int current = 0, area = b->size*b->size;
 
     char * comp = malloc( (sizeof(int)+sizeof(char)) * area);
 
 
-    while(i <= index){
+    for (int i = 0; i < area; ++i)
+    {
+        if(!fixed && i <= index)
+            break;
 
         if((b->gameBoard[i].fixed && fixed) || (!b->gameBoard[i].fixed && !fixed)){
             memcpy(&comp[current], &i, sizeof(int));
@@ -280,28 +308,22 @@ int compressBoard(Board * b, int fixed, int index, char ** r){
             memcpy(&comp[current], &(b->gameBoard[i].value), sizeof(char));
             current+=sizeof(char);
         }
-        
-        i++;
     }
-
     *r = comp;
     
     return current;
 }
 
 
-void decompressBoard(Board * b, char * r, int s){
+int decompressBoard(Board * b, char * r, int s){
     int current = 0, index = 0, i , area, m_index, value;
 
     area = b->size * b->size;
-    
-    if(b->gameBoard == NULL){
-        allocBoard(b);
-        for ( i = 0; i < area; ++i)
-        {
-            b->gameBoard[i].value = 0;
-            b->gameBoard[i].fixed = FALSE;
-        }
+    allocBoard(b);
+    for ( i = 0; i < area; ++i)
+    {
+        b->gameBoard[i].value = 0;
+        b->gameBoard[i].fixed = FALSE;
     }
     
     
@@ -323,6 +345,7 @@ void decompressBoard(Board * b, char * r, int s){
         b->boxMask[box(index, b->squareSize)][m_index] = addmask(b->boxMask[box(index, b->squareSize)][m_index], value);
 
     }
+    return ++index;
 
 }
 

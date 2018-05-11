@@ -45,13 +45,13 @@ typedef struct Board{
 
 int allocBoard(Board * b);
 Board * copyBoard(Board* original);
-int copyBoard(Board* dst, Board * src);
+int makeCopyBoard(Board* dst, Board * src);
 void updateMasks(Board * b, int i);
 void removeMasks(Board * b, int i);
 int checkValidityMasks(Board * b, int size, int value);
 int fillGameBoard(Board *b, char const* file);
 int compressBoard(Board * board, int fixed, int index, char ** r);
-void decompressBoard(Board * b, char * r, int s);
+int decompressBoard(Board * b, char * r, int s);
 void printBoard(Board * b);
 void printBoardT(Board *b, int id);
 void printBM(Board *b);

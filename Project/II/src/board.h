@@ -45,6 +45,7 @@ typedef struct Board{
 
 int allocBoard(Board * b);
 Board * copyBoard(Board* original);
+int makeCopyBoard(Board* dst, Board * src);
 void updateMasks(Board * b, int i);
 void removeMasks(Board * b, int i);
 int checkValidityMasks(Board * b, int size, int value);

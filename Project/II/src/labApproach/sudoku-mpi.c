@@ -69,14 +69,11 @@ void updateCtrlMsg(){
 *    Brute force algorithm that receives a board and finds a solution if there's one    *            										   	    *
 *****************************************************************************************/
 
-int bruteForce(Board *b, int start, int id, int p, char * fid, MPI_Request *ctrlMsgReq){
-	int i = start, valid = TRUE, flag = FALSE, size, right = (id+1)%p;
+int bruteForce(Board *b, int start, int id, int p, char * fid){
+	int i = start, valid = TRUE, receiveFlag = FALSE, sendFlag = FALSE, size, right = (id+1)%p;
     char * compressed = NULL;
     MPI_Status s;
-    MPI_Request boardReq;
-
-    //if MPI_Test)
-    MPI_Irecv(&neighbor, MPI_BYTE, right, ASK_WORK, MPI_COMM_WORLD, &boardReq, &s);
+    MPI_Request ctrlMsgReq, sendBoardReq;
 
 	for(i = start; i < b->size*b->size; i++)
 	{
@@ -91,28 +88,58 @@ int bruteForce(Board *b, int start, int id, int p, char * fid, MPI_Request *ctrl
 		{
             /* Checks if there is a valid guess for that index */
             if((valid = makeGuess( b , i)) == TRUE){
-                Test(boardReq, &flag, &s);
-                if(flag != 0){
-                    //Request of neighbor received
-                    //SEND WORK to neighbor (id+1)%p
-                    //MAKE MPI_Irec() to keep listening 4 other requests
+                receiveFlag = FALSE;
+                Test(ctrlMsgReq, &receiveFlag, &s);
 
+                if(work4neighbor && !receiveFlag){
                     size = compressBoard(board, 0, i, &compressed);
+                    MPI_Isend(&compressed, size, MPI_BYTE, right, GET_WORK, MPI_COMM_WORLD, &sendBoardReq);
 
-                    MPI_Send(&compressed, size, MPI_BYTE, right, GET_WORK, MPI_COMM_WORLD);
-                    free(compressed);
+                    sendFlag = FALSE;
+                    while(!sendFlag){
+                        MPI_Test(&sendBoardReq, &sendFlag, &s);
+                        if( sendFlag ){
+                            free(compressed);
+                            work4neighbor = FALSE;
+                            break;
+                        }
 
-                    MPI_Irecv(&neighbor, MPI_BYTE, right, ASK_WORK, MPI_COMM_WORLD, &boardReq, &s);
+                        receiveFlag = FALSE;
+                        Test(ctrlMsgReq, &receiveFlag, &s);
+                        if( receiveFlag ){
+                            if(ctrlMsg < 0){
+                                MPI_Cancel(&sendBoardReq);
+                                lastCtrlMsg = ctrlMsg;
+                                return -3;
+                            }
+                        }
+                    }
+
                     valid = makeGuess(b, i); 
-                    flag = 0;
-                }
+                }else if(receiveFlag){
 
+                        //Terminate, someone found the solution
+                        if(ctrlMsg < 0){
+                            lastCtrlMsg = ctrlMsg; 
+                            return -3;
+                        }else if(ctrlMsg == right){ //Neighbor needs work 
+                            size = compressBoard(board, 0, i, &compressed);
+
+                            MPI_Send(&compressed, size, MPI_BYTE, right, GET_WORK, MPI_COMM_WORLD);
+                            free(compressed);
+                            work4neighbor = FALSE;
+
+                            valid = makeGuess(b, i); 
+                        }
+
+                        //Keep listening 
+                        MPI_Irecv(&ctrlMsg, MPI_BYTE, right, ASK_WORK, MPI_COMM_WORLD, &ctrlMsgReq, &s);
+                }
             /*
             */
             }
             if(valid == FALSE)
             {
-
                 /* If there's no possible value for that unfixed index, it has to backtrack to the last unfixed cell */
                 do
                 {
@@ -137,27 +164,23 @@ int bruteForce(Board *b, int start, int id, int p, char * fid, MPI_Request *ctrl
 		}
 
         //Tests if someone found the solution
-        MPI_Test(ctrlMsgReq, &flag, &s);
-        if(flag){
+        
+        receiveFlag = FALSE;
+        MPI_Test(ctrlMsgReq, &receiveFlag, &s);
+        if(receiveFlag){
+            if(ctrlMsg < 0){
+                return -3;
+            }else if(ctrlMsg == right){ //Neighbor needs work 
+                work4neighbor = TRUE;
+            }
 
-            if(ctrlMsg != -1)
-                updateCtrlMsg();
-            else
-                stop = TRUE;
-
-            MPI_Send(&ctrlMsg, 1, MPI_INT, right, CTRL_MSG, MPI_COMM_WORLD, &ctrlMsgReq);
-                
-            if(stop){
-                //waitSend())
-                break;
-            }else
-                MPI_Irecv(&ctrlMsg, 1, MPI_INT, left , CTRL_MSG, MPI_COMM_WORLD, &ctrlMsgReq);
+            //Keep listening 
+            MPI_Irecv(&ctrlMsg, MPI_BYTE, right, ASK_WORK, MPI_COMM_WORLD, &ctrlMsgReq, &s);
         }
 
 
 	}
 	/* If the solution is find, print it */
-
 
     //send Solution Alert
     //int MPI_Send(const void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm)
@@ -243,7 +266,7 @@ void termination(int id, int p,  MPI_Request *rr, char *fid){
     }
 
 }
-int check(Board *board, int id, int p){
+int check(Board *originalBoard, int id, int p){
 
 
     MPI_Request ctrlMsgReq, boardReq;
@@ -251,24 +274,79 @@ int check(Board *board, int id, int p){
 
     char neighbor, stop = FALSE;
     int left = ((id==0)?(p-1:id-1)), right = (id+1)%p;
+    int start = 0;
 
     state = ((id)?(FALSE:TRUE));
     laststate = state;
-
-    MPI_Irecv(&ctrlMsg, 1, MPI_INT, right, ASK_WORK, MPI_COMM_WORLD, &ctrlMsgReq);
     
+    lastCtrlMsg = -(p+1);
+
+    Board * board = copyBoard(originalBoard);
+
+
     while(!stop){
+                        
+        MPI_Irecv(&ctrlMsg, 1, MPI_INT, right, ASK_WORK, MPI_COMM_WORLD, &ctrlMsgReq);
         //Means that I have work to do
         if(state){
-                     
-            bruteForce(); //update laststate
 
+            switch(bruteForce(board, start, id, p)){
+                case -3: //há solucao mas nao é minha 
+                    //reencaminhar ate receber 2 vezes
+                    while(lastCtrlMsg != ctrlMsg){
+                        
+                        lastCtrlMsg = ctrlMsg;
+                        
+                        MPI_Send(&ctrlMsg, 1, MPI_INIT, left, ASK_WORK, MPI_COMM_WORLD, &boardReq);
+
+                        MPI_Recv(&ctrlMsg, 1, MPI_INT, right, ASK_WORK, MPI_COMM_WORLD, &ctrlMsgReq);
+                    }
+                    
+                    MPI_Send(&ctrlMsg, 1, MPI_INIT, left, ASK_WORK, MPI_COMM_WORLD, &boardReq);
+                    return;
+                    break;
+
+                case TRUE:
+                    copyid = id - p;
+                    MPI_Isend(&copyid, 1, MPI_INT, left, ASK_WORK, MPI_COMM_WORLD, &boardReq); 
+
+                    receiveFlag = FALSE;
+                    sendFlag = FALSE;
+
+                    while(!receiveFlag || !sendFlag){
+                        MPI_Test(&boardReq, &sendFlag, &s);
+                        if(sendFlag){
+                            MPI_Test(&ctrlMsgReq, &receiveFlag, &s);
+                            if(receiveFlag){
+                                if (lastCtrlMsg == -p-1 && ctrlMsg <= id - p){
+                                    lastCtrlMsg = ctrlMsg;
+                                    MPI_Isend(&ctrlMsg, 1, MPI_INT, left, ASK_WORK, MPI_COMM_WORLD, &boardReq); 
+                                    sendFlag = FALSE;
+                                }else if(lastCtrlMsg == ctrlMsg){
+                                    if (ctrlMsg != id-p){
+                                        MPI_Send(&ctrlMsg, 1, MPI_INT, left, ASK_WORK, MPI_COMM_WORLD); 
+                                    }else{
+                                        printBoard(finalBoard);
+                                    }
+                                    return;
+                                }
+
+                                MPI_Irecv(&ctrlMsg, 1, MPI_INT, right, ASK_WORK, MPI_COMM_WORLD, &ctrlMsgReq);
+                                receiveFlag = FALSE;
+                            }
+                        }
+                        
+                    }
+
+                    break;
+            } //update laststate
             state = FALSE;
             
              
 
         }else{
 
+            if(copyid)
             // Warn left neighbor, work needed
             MPI_Isend(&copyid, MPI_BYTE, left, ASK_WORK, MPI_COMM_WORLD, &boardReq, &s);
 
@@ -281,27 +359,47 @@ int check(Board *board, int id, int p){
                     //Receive board
                     compressed = malloc(size);
                     MPI_Recv(compressed, size, MPI_BYTE, left, MPI_COMM_WORLD, &s);
+                    makeCopyBoard(board, originalBoard);
+                    start = decompressBoard(board, r, s);
                     state = TRUE;
-                    
                     flag = FALSE;
                     break;
                 }
                 //Checks if someone found the solution or if there's no more work and thre's no solution
                 MPI_Test(ctrlMsgReq, &flag, &s);
                 if(flag){
-                    //Save if the left neighbor asked for work
-                    workNeeded = TRUE;
 
-                    if(&ctrlMsg < id){
-                         MPI_Send(&ctrlMsg, 1, MPI_INT, left, CTRL_MSG, MPI_COMM_WORLD, &ctrlMsgReq);
+                    if(ctrlMsg >= 0){
+
+                        //Save if the left neighbor asked for work
+                        work4neighbor = TRUE;
+                            
+                        if(ctrlMsg == id){ //change content to termination character
+                            ctrlMsg = p+1;
+                            //end = TRUE;
+                        }
+                
+                        MPI_Send(&ctrlMsg, 1, MPI_INT, left, CTRL_MSG, MPI_COMM_WORLD, &ctrlMsgReq);
+
+                        if(ctrlMsg == p+1) return;
+                        
+                        MPI_Irecv(&ctrlMsg, 1, MPI_INT, right, ASK_WORK, MPI_COMM_WORLD, &ctrlMsgReq);
+
+                    }else{ // termination/solution spotted
+
+                        while(lastCtrlMsg != ctrlMsg){
+                            
+                            lastCtrlMsg = ctrlMsg;
+                            
+                            MPI_Send(&ctrlMsg, 1, MPI_INIT, left, ASK_WORK, MPI_COMM_WORLD, &boardReq);
+
+                            MPI_Recv(&ctrlMsg, 1, MPI_INT, right, ASK_WORK, MPI_COMM_WORLD, &ctrlMsgReq);
+                        }
+                        
+                        MPI_Send(&ctrlMsg, 1, MPI_INIT, left, ASK_WORK, MPI_COMM_WORLD, &boardReq);
+                        return;
+
                     }
-                    
-                    
-                    /*if(stop){
-                        //waitSend())
-                        break;
-                    }else
-                        MPI_Irecv(&ctrlMsg, &ctrlMsgReq);*/
                 }
             }
         }
