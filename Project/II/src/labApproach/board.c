@@ -60,9 +60,9 @@ int makeCopyBoard(Board* dst, Board * src){
         dst->colMask[col(i, src->size)][1] = src->colMask[col(i, src->size)][1];
         dst->colMask[col(i, src->size)][2] = src->colMask[col(i, src->size)][2];
 
-        dst->boxMask[box(i, src->squareSize)][0] = src->boxMask[box(i, original->squareSize)][0];
-        dst->boxMask[box(i, src->squareSize)][1] = src->boxMask[box(i, original->squareSize)][1];
-        dst->boxMask[box(i, src->squareSize)][2] = src->boxMask[box(i, original->squareSize)][2];
+        dst->boxMask[box(i, src->squareSize)][0] = src->boxMask[box(i, src->squareSize)][0];
+        dst->boxMask[box(i, src->squareSize)][1] = src->boxMask[box(i, src->squareSize)][1];
+        dst->boxMask[box(i, src->squareSize)][2] = src->boxMask[box(i, src->squareSize)][2];
     }
     return 1;
 
