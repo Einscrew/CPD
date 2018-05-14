@@ -201,7 +201,7 @@ void listenNeighbors(int id, int p){
         
         if(recv){
 
-            if(msg == right || msg == TERM || msg < 0 || (msg >= 0 && work4neighbor == TRUE)){
+            if(msg == right || msg == TERM || msg < 0 || (msg >= 0 && work4neighbor == TRUE) || msg == id){
 
                 if(msg < 0){ // Solution found by a working node
                     EXIT = TRUE;
@@ -233,9 +233,9 @@ void listenNeighbors(int id, int p){
 
                 //if(!((msg == TERM) && (NoSolution == TRUE)))
                 MPI_Send(&msg, 1, MPI_INT, left, ASK_WORK, MPI_COMM_WORLD); 
-            }else{
-                printf("[%d] ignoring ->[%d]\n", id, msg );
-            }
+	        }else{
+	            printf("[%d] ignoring ->[%d]\n", id, msg );
+	        }
 
             MPI_Irecv(&msg, 1, MPI_INT, right, ASK_WORK, MPI_COMM_WORLD, &msgReq);
             recv = FALSE;
@@ -271,9 +271,9 @@ int GetOrCheckWork(Board * board, int id){
 
         makeCopyBoard(board, originalBoard);
         
-        printf("----originalBoard------\n");
+        /*printf("----originalBoard------\n");
         printBoardT(board, id);
-        fflush(stdout);
+        fflush(stdout);*/
         
         startIndex = decompressBoard(board, compressed, size, FALSE);
         free(compressed);
