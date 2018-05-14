@@ -111,7 +111,6 @@ int giveWork(Board *b, int i, int id){
                 printf("\n");
                 fflush(stdout);
 
-
                 free(compressed);
                 work4neighbor = FALSE;
                 return WORK;
@@ -191,6 +190,7 @@ int giveWork(Board *b, int i, int id){
 
 }
 
+
 void listenNeighbors(int id, int p){
 // MPI_Waitany()??????????????????????????????????????????????????????????????????????????????
     int recv = FALSE;
@@ -201,38 +201,42 @@ void listenNeighbors(int id, int p){
         MPI_Test(&msgReq, &recv, &s);
         
         if(recv){
-            if(msg < 0){ // Solution found by a working node
-                EXIT = TRUE;
-                printf("[%d] solution found ->[%d]\n", id, msg);
-                //Pass message wait 4 TERM          
-            }else if(msg == id){ //No solution
-                sendTermination = TRUE;
-                printf("[%d] no solution ->[%d]\n", id, msg);
 
-                //Send TERM wait TERM
-                msg = TERM;
-                EXIT = TRUE;
-            }else if(msg == right){ // nothing I can do??? Neighbor need work, I don't have
-                work4neighbor = TRUE;
-                printf("[%d] neighbor needs work ->[%d]\n", id, msg);
+            if(!(work4neighbor == FALSE && msg > right && msg != TERM)){
 
-                //Pass message wait 4 another
-                //wait = FALSE;                                         ???????????????????
-            }else if(msg == TERM){ // exit instruction
-                printf("[%d] terminating ->[%d]\n", id, msg);
-                if(sendTermination == FALSE){
-                    // Send TERM
-                    MPI_Send(&msg, 1, MPI_INT, left, ASK_WORK, MPI_COMM_WORLD); 
+                if(msg < 0){ // Solution found by a working node
+                    EXIT = TRUE;
+                    printf("[%d] solution found ->[%d]\n", id, msg);fflush(stdout);
+                    //Pass message wait 4 TERM          
+                }else if(msg == id){ //No solution
+                    sendTermination = TRUE;
+                    printf("[%d] no solution ->[%d]\n", id, msg);fflush(stdout);
+
+                    //Send TERM wait TERM
+                    msg = TERM;
+                    EXIT = TRUE;
+                }else if(msg == right){ // nothing I can do??? Neighbor need work, I don't have
+                    work4neighbor = TRUE;
+                    printf("[%d] neighbor needs work ->[%d]\n", id, msg);
+
+                    //Pass message wait 4 another
+                    //wait = FALSE;                                         ???????????????????
+                }else if(msg == TERM){ // exit instruction
+                    printf("[%d] terminating ->[%d]\n", id, msg);fflush(stdout);
+                    if(sendTermination == FALSE){
+                        // Send TERM
+                        MPI_Send(&msg, 1, MPI_INT, left, ASK_WORK, MPI_COMM_WORLD); 
+                    }
+                    return;//??
+                }else{
+                    printf("[%d] no match ->[%d]\n", id, msg);fflush(stdout);
                 }
-                return;//??
-            }else{
-                printf("[%d] no match ->[%d]\n", id, msg);
-            }
 
-            fflush(stdout);
-            
-            //if(!((msg == TERM) && (NoSolution == TRUE)))
-            MPI_Send(&msg, 1, MPI_INT, left, ASK_WORK, MPI_COMM_WORLD); 
+                //if(!((msg == TERM) && (NoSolution == TRUE)))
+                MPI_Send(&msg, 1, MPI_INT, left, ASK_WORK, MPI_COMM_WORLD); 
+            }else{
+                printf("[%d] ignoring ->[%d]\n", id, msg );
+            }
 
             MPI_Irecv(&msg, 1, MPI_INT, right, ASK_WORK, MPI_COMM_WORLD, &msgReq);
             recv = FALSE;
@@ -267,18 +271,18 @@ int GetOrCheckWork(Board * board, int id){
         fflush(stdout);
 
         makeCopyBoard(board, originalBoard);
-        if(id){
-            printf("----originalBoard------\n");
-            printBoardT(board, id);
-            fflush(stdout);
-        }
+        
+        printf("----originalBoard------\n");
+        printBoardT(board, id);
+        fflush(stdout);
+        
         startIndex = decompressBoard(board, compressed, size, FALSE);
         free(compressed);
-        if(id){
-            printf("----decompressBoard------\n");
-            printBoardT(board, id);
-            fflush(stdout);
-        }
+        
+        printf("----decompressBoard------\n");
+        printBoardT(board, id);
+        fflush(stdout);
+        
         
         return TRUE;
     }
@@ -295,9 +299,9 @@ int GetOrCheckWork(Board * board, int id){
 
 int bruteForce(Board *b, int start, int id, int p){
     int i = start, valid = TRUE;
-    int idcpy = id;
+    int idcpy = id, area = b->size*b->size;
 
-    for(i = start; i < b->size*b->size; i++)
+    for(i = start; i < area ; i++)
     {
         if(valid == FALSE)
         {
@@ -311,10 +315,11 @@ int bruteForce(Board *b, int start, int id, int p){
             /* Checks if there is a valid guess for that index */
             if((valid = makeGuess( b , i)) == TRUE){
 
-
+           
                 switch(giveWork(b, i, id)){
                     case IDLE: //alguem encontrou a solucao
                         printf("[%d] end giveWork IDLE\n", id);
+                        fflush(stdout);
                         EXIT = TRUE; // wait 4 TERM
                         MPI_Send(&msg, 1, MPI_INT, left, ASK_WORK, MPI_COMM_WORLD); 
                         MPI_Irecv(&msg, 1, MPI_INT, right, ASK_WORK, MPI_COMM_WORLD, &msgReq);
@@ -324,9 +329,15 @@ int bruteForce(Board *b, int start, int id, int p){
                     
                     case WORK:
                         printf("[%d] end giveWork WORK\n", id);
+                        fflush(stdout);
+                        
                         valid = makeGuess(b, i); 
+                        if(valid == TRUE){
+                            printf("EHEHEHEHEHE[%d]@%d\n", id, i);
+                        }   
                         break;                      
-               }
+                }
+                
             /*
             */
             }
@@ -365,8 +376,8 @@ int bruteForce(Board *b, int start, int id, int p){
     finalBoard = b;
     //send Solution Alert
     sendSolution(id, p);
-    printf("[%d]FINISH\n", id); fflush(stdout);
-
+    printf("[%d]FINISH\n", id);
+    fflush(stdout);
     
     return TRUE;
 }
