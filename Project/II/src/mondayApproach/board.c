@@ -93,18 +93,20 @@ Board * copyBoard(Board * original){
     for(int i = 0 ; i < original->size*original->size ; i++){
         new->gameBoard[i].value = original->gameBoard[i].value;
         new->gameBoard[i].fixed = original->gameBoard[i].fixed;
-        
-        new->rowMask[row(i, original->size)][0] = original->rowMask[row(i, original->size)][0];
-        new->rowMask[row(i, original->size)][1] = original->rowMask[row(i, original->size)][1];
-        new->rowMask[row(i, original->size)][2] = original->rowMask[row(i, original->size)][2];
+    }
+    for (int i = 0; i < original->size; i++)
+    {
+        new->rowMask[i][0] = original->rowMask[i][0];
+        new->rowMask[i][1] = original->rowMask[i][1];
+        new->rowMask[i][2] = original->rowMask[i][2];
 
-        new->colMask[col(i, original->size)][0] = original->colMask[col(i, original->size)][0];
-        new->colMask[col(i, original->size)][1] = original->colMask[col(i, original->size)][1];
-        new->colMask[col(i, original->size)][2] = original->colMask[col(i, original->size)][2];
+        new->colMask[i][0] = original->colMask[i][0];
+        new->colMask[i][1] = original->colMask[i][1];
+        new->colMask[i][2] = original->colMask[i][2];
 
-        new->boxMask[box(i, original->squareSize)][0] = original->boxMask[box(i, original->squareSize)][0];
-        new->boxMask[box(i, original->squareSize)][1] = original->boxMask[box(i, original->squareSize)][1];
-        new->boxMask[box(i, original->squareSize)][2] = original->boxMask[box(i, original->squareSize)][2];
+        new->boxMask[i][0] = original->boxMask[i][0];
+        new->boxMask[i][1] = original->boxMask[i][1];
+        new->boxMask[i][2] = original->boxMask[i][2];
     }
     return new;
 }
@@ -321,7 +323,7 @@ int compressBoard(Board * b, int fixed, int index, char ** r){
 }
 
 
-int decompressBoard(Board * b, char * r, int s){
+int decompressBoard(Board * b, char * r, int s, int fixed){
     int current = 0, index = 0, i , area, m_index, value;
 
     area = b->size * b->size;
@@ -342,7 +344,7 @@ int decompressBoard(Board * b, char * r, int s){
         value = r[current];
         memcpy(&(b->gameBoard[index].value), &value, sizeof(char));
         current += sizeof(char);
-        b->gameBoard[index].fixed = FALSE;
+        b->gameBoard[index].fixed = (fixed)?TRUE:FALSE;
         
         //TODO: update masks <------------------------------
         m_index = value/32;

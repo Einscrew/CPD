@@ -101,7 +101,7 @@ int giveWork(Board *b, int i, int id){
             MPI_Test(&boardReq, &sendFlag, &s);
             if( sendFlag ){
                 printf("[%d] compressed sent %d @ index: %d\n", id, size, i);
-
+                printf(">[%d]", id );
                 for (long int j = 0; j < size; ++j){
                     printf("%d", compressed[j]);
                     if((j+1)%5==0){
@@ -124,6 +124,7 @@ int giveWork(Board *b, int i, int id){
 
                 if(msg < 0){
                     MPI_Cancel(&boardReq);
+                    free(compressed);
                     return IDLE;
                 }
                 MPI_Irecv(&msg, 1, MPI_INT, right, ASK_WORK, MPI_COMM_WORLD, &msgReq);
@@ -150,7 +151,7 @@ int giveWork(Board *b, int i, int id){
                     MPI_Test(&boardReq, &sendFlag, &s);
                     if( sendFlag ){
                         printf("[%d] compressed sent %d @ index: %d\n", id, size, i);
-
+                        printf(">[%d]", id );
                         for (long int j = 0; j < size; ++j){
                             printf("%d", compressed[j]);
                             if((j+1)%5==0){
@@ -171,6 +172,7 @@ int giveWork(Board *b, int i, int id){
                         receiveFlag = FALSE;
                         if(msg < 0){
                             MPI_Cancel(&boardReq);
+                            free(compressed);
                             return IDLE;
                         }
                         
@@ -245,19 +247,16 @@ int GetOrCheckWork(Board * board, int id){
 
     MPI_Iprobe(left, GET_WORK, MPI_COMM_WORLD, &ret, &s);
     if(ret){
-        printf("[%d] flag Probe: %d\n",id, ret );
         
-        printf("[%d] will get work\n", id );
-        fflush(stdout);
-
         MPI_Get_count(&s, MPI_BYTE, &size);
-        printf("[%d] will receive %d\n", id, size );fflush(stdout);
+        printf("[%d] will receive %d\n", id, size );
+        fflush(stdout);
 
         compressed = malloc(size);
 
         MPI_Recv(compressed, size, MPI_BYTE, left, GET_WORK, MPI_COMM_WORLD, &s);
         
-        printf("[%d]", id);
+        printf("<[%d]", id);
         for (long int i = 0; i < size; ++i){
             printf("%d", compressed[i]);
             if((i+1)%5==0){
@@ -273,7 +272,7 @@ int GetOrCheckWork(Board * board, int id){
             printBoardT(board, id);
             fflush(stdout);
         }
-        startIndex = decompressBoard(board, compressed, size);
+        startIndex = decompressBoard(board, compressed, size, FALSE);
         free(compressed);
         if(id){
             printf("----decompressBoard------\n");
@@ -354,6 +353,8 @@ int bruteForce(Board *b, int start, int id, int p){
                     idcpy = id;
                     
                     MPI_Send(&idcpy, 1, MPI_INT, left, ASK_WORK, MPI_COMM_WORLD ); // Receiver has to receive??
+                    printf("[%d] ASKED work %d\n", id, left);
+                    fflush(stdout);
                     return FALSE;
                 }
             }
@@ -493,7 +494,7 @@ int main(int argc, char *argv[]) {
         
         */
         
-        decompressBoard(board, r, s);
+        decompressBoard(board, r, s, TRUE);
         
         //printf("%d\n", board->squareSize);
         //printf("Does process %d work? %c\n",id, (check(board))?'Y':'N' );
