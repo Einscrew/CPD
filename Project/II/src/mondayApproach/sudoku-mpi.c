@@ -6,6 +6,7 @@
 //#define OUT 1
 #define WORK 10
 #define IDLE -10
+#define NO_WORK 5
 #define  GET_WORK 555
 #define ASK_WORK 444
 
@@ -100,7 +101,7 @@ int giveWork(Board *b, int i, int id){
             //test if board request was completed
             MPI_Test(&boardReq, &sendFlag, &s);
             if( sendFlag ){
-                printf("[%d] compressed sent %d @ index: %d\n", id, size, i);
+                /*printf("[%d] compressed sent %d @ index: %d\n", id, size, i);
                 printf(">[%d]", id );
                 for (long int j = 0; j < size; ++j){
                     printf("%d", compressed[j]);
@@ -109,7 +110,7 @@ int giveWork(Board *b, int i, int id){
                     }
                 }
                 printf("\n");
-                fflush(stdout);
+                fflush(stdout);*/
 
                 free(compressed);
                 work4neighbor = FALSE;
@@ -132,7 +133,7 @@ int giveWork(Board *b, int i, int id){
     }else{
 
         MPI_Test(&msgReq, &receiveFlag, &s);
-        if( receiveFlag ){
+        if(receiveFlag){
             receiveFlag = FALSE;
             
 
@@ -140,6 +141,7 @@ int giveWork(Board *b, int i, int id){
                 return IDLE;
             }
             else if(msg == right){ // have to give work
+            	//printf("right [%d] needs work from %d\n", right, id);
                 MPI_Irecv(&msg, 1, MPI_INT, right, ASK_WORK, MPI_COMM_WORLD, &msgReq);
 
                 size = compressBoard(b, 0, i, &compressed);
@@ -149,7 +151,7 @@ int giveWork(Board *b, int i, int id){
                     //test if board request was completed
                     MPI_Test(&boardReq, &sendFlag, &s);
                     if( sendFlag ){
-                        printf("[%d] compressed sent %d @ index: %d\n", id, size, i);
+                       /* printf("[%d] compressed sent %d @ index: %d\n", id, size, i);
                         printf(">[%d]", id );
                         for (long int j = 0; j < size; ++j){
                             printf("%d", compressed[j]);
@@ -158,7 +160,7 @@ int giveWork(Board *b, int i, int id){
                             }
                         }
                         printf("\n");
-                        fflush(stdout);
+                        fflush(stdout);*/
 
                         free(compressed);
                         work4neighbor = FALSE;
@@ -186,7 +188,7 @@ int giveWork(Board *b, int i, int id){
 
     }
 
-    return WORK;
+    return NO_WORK;
 
 }
 
@@ -201,7 +203,7 @@ void listenNeighbors(int id, int p){
         
         if(recv){
 
-            if(msg == right || msg == TERM || msg < 0 || (msg >= 0 && work4neighbor == TRUE) || msg == id){
+            if(msg == right || msg == TERM || msg < 0 || (msg >= 0 && work4neighbor == TRUE) /*|| msg == id*/){
 
                 if(msg < 0){ // Solution found by a working node
                     EXIT = TRUE;
@@ -278,9 +280,9 @@ int GetOrCheckWork(Board * board, int id){
         startIndex = decompressBoard(board, compressed, size, FALSE);
         free(compressed);
         
-        printf("----decompressBoard------\n");
+        /*printf("----decompressBoard------\n");
         printBoardT(board, id);
-        fflush(stdout);
+        fflush(stdout);*/
         
         
         return TRUE;
@@ -302,6 +304,18 @@ int bruteForce(Board *b, int start, int id, int p){
 
     for(i = start; i < area ; i++)
     {
+    	/*if(!id){
+    		printf("[%d] ----working------\n", id);
+	        //printBoardT(b, id);
+	        printBM(b);
+	        fflush(stdout);
+    	}else{
+    		printf(".");
+    		fflush(stdout);
+    	}*/
+		
+    	
+
         if(valid == FALSE)
         {
             i--;
@@ -311,14 +325,14 @@ int bruteForce(Board *b, int start, int id, int p){
         /* Looks for an unfixed cell */
         if(b->gameBoard[i].fixed == FALSE)
         {
+        	//printf("ENTROU i = %d\n", i);
             /* Checks if there is a valid guess for that index */
             if((valid = makeGuess( b , i)) == TRUE){
 
-           
                 switch(giveWork(b, i, id)){
                     case IDLE: //alguem encontrou a solucao
-                        printf("[%d] end giveWork IDLE\n", id);
-                        fflush(stdout);
+                       /* printf("[%d] end giveWork IDLE\n", id);
+                        fflush(stdout);*/
                         EXIT = TRUE; // wait 4 TERM
                         MPI_Send(&msg, 1, MPI_INT, left, ASK_WORK, MPI_COMM_WORLD); 
                         MPI_Irecv(&msg, 1, MPI_INT, right, ASK_WORK, MPI_COMM_WORLD, &msgReq);
@@ -327,14 +341,15 @@ int bruteForce(Board *b, int start, int id, int p){
                         break;
                     
                     case WORK:
-                        printf("[%d] end giveWork WORK\n", id);
-                        fflush(stdout);
+                        /*printf("[%d] end giveWork WORK\n", id);
+                        fflush(stdout);*/
                         
                         valid = makeGuess(b, i); 
                         if(valid == TRUE){
-                            printf("EHEHEHEHEHE[%d]@%d\n", id, i);
+                            //printf("EHEHEHEHEHE[%d]@%d\n", id, i);
                         }   
-                        break;                      
+                        break;
+
                 }
                 
             /*
@@ -404,9 +419,9 @@ int check(int id, int p){
     while(!EXIT){
 
         if( hasWork || GetOrCheckWork(board, id) ){ // updates haveWork
-            printf("[%d] will work\n", id);
+            /*printf("[%d] will work\n", id);
             printBoardT(board, id);
-            fflush(stdout);
+            fflush(stdout);*/
             if( bruteForce( board,  startIndex,  id,  p))
                 return 0;
             
