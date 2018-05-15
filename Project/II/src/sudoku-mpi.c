@@ -79,7 +79,6 @@ void sendSolution(int id, int p){
                     MPI_Send(&msg, 1, MPI_INT, left, ASK_WORK, MPI_COMM_WORLD ); // Receiver has to receive??
                 else
                     printBoard(finalBoard);
-
                 EXIT = TRUE;
                 return;
             }
@@ -259,6 +258,7 @@ void listenNeighbors(int id, int p){
 
 int GetOrCheckWork(Board * board, int id){
     int ret = FALSE, size;
+    long int i = 0;
     char * compressed = NULL;
     MPI_Status s;
 
@@ -274,7 +274,7 @@ int GetOrCheckWork(Board * board, int id){
         MPI_Recv(compressed, size, MPI_BYTE, left, GET_WORK, MPI_COMM_WORLD, &s);
         
         printf("<[%d]", id);
-        for (long int i = 0; i < size; ++i){
+        for (i = 0; i < size; ++i){
             printf("%d", compressed[i]);
             if((i+1)%5==0){
                 printf("|");
@@ -410,6 +410,7 @@ int bruteForce(Board *b, int start, int id, int p, int askWork){
 }
 
 void checkPossibilities(Board * b, int cindex, int index, int * possible, int id){
+    int value = 0;
     if(cindex > b->size*b->size-1){
         NoSolution = FALSE;
 
@@ -423,7 +424,7 @@ void checkPossibilities(Board * b, int cindex, int index, int * possible, int id
         checkPossibilities(b, cindex+1, index+1, possible, id);
     }
     else{
-        for (int value = 1; value <= b->size; value++)
+        for (value = 1; value <= b->size; value++)
         {
         
             if(checkValidityMasks(b, cindex, value) == TRUE)
@@ -446,7 +447,7 @@ void checkPossibilities(Board * b, int cindex, int index, int * possible, int id
 }
 
 void initialWork(Board * b, int cindex, int index, int * possible, int id, int p){
-
+    int value = 1;
 
     if(cindex > b->size*b->size-1)
         return;
@@ -454,7 +455,7 @@ void initialWork(Board * b, int cindex, int index, int * possible, int id, int p
         initialWork(b, cindex+1, index+1, possible, id, p);
     }
     else{
-        for (int value = 1; value <= b->size; value++)
+        for (value = 1; value <= b->size; value++)
         {
             if (NoSolution == FALSE){
                 return;
