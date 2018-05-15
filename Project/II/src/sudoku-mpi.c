@@ -4,13 +4,14 @@
 #include "sudoku-mpi.h"
 
 
-#define OUT 1
+//#define OUT 1
 #define WORK 10
 #define IDLE -10
 #define NO_WORK 5
 #define  GET_WORK 555
 #define ASK_WORK 444
 
+int brecv = 0;
 
 int extern emptyCells;
 
@@ -310,6 +311,9 @@ int GetOrCheckWork(Board * board, int id){
 
         MPI_Recv(compressed, size, MPI_BYTE, left, GET_WORK, MPI_COMM_WORLD, &s);
         
+        //printf("[%d] Board received\n", id);
+        brecv++;
+
         #ifdef OUT
         long int i = 0;
         printf("<[%d]", id);
@@ -375,9 +379,6 @@ int bruteForce(Board *b, int start, int id, int p, int askWork){
             #endif
             fflush(stdout);
         }*/
-        
-        
-
         if(valid == FALSE)
         {
             i--;
@@ -391,19 +392,19 @@ int bruteForce(Board *b, int start, int id, int p, int askWork){
             //printf("ENTROU i = %d\n", i);
             #endif
             /* Checks if there is a valid guess for that index */
-            if((valid = makeGuess( b , i)) == TRUE){
+            if((valid = makeGuess( b , i)) == TRUE && emptyCells > area/2){
 
                 switch(giveWork(b, i, id)){
                     case IDLE: //alguem encontrou a solucao
-                       /* printf("[%d] end giveWork IDLE\n", id);
-                       #ifdef OUT
-                       #endif
+                        /* printf("[%d] end giveWork IDLE\n", id);
+                        #ifdef OUT
+                        #endif
                         fflush(stdout);*/
                         EXIT = TRUE; // wait 4 TERM
                         NoSolution = FALSE;
                         MPI_Send(&msg, 1, MPI_INT, left, ASK_WORK, MPI_COMM_WORLD); 
                         MPI_Irecv(&msg, 1, MPI_INT, right, ASK_WORK, MPI_COMM_WORLD, &msgReq);
-                        //
+                        
                         printf("[%d] will listenNeighbors bruteForce ask:%d\n", id, askWork );
                         listenNeighbors(id, p); // always ends the process (EXIT = TRUE)
                         return FALSE;
@@ -438,6 +439,7 @@ int bruteForce(Board *b, int start, int id, int p, int askWork){
                     {
                         removeMasks(b, i);
                         b->gameBoard[i].value = 0;
+                        emptyCells++;
                     }
 
                     i--;
@@ -460,7 +462,8 @@ int bruteForce(Board *b, int start, int id, int p, int askWork){
                     }
                     return FALSE;
                 }
-            }
+            }else
+                emptyCells--;
         }
 
     }
@@ -746,6 +749,7 @@ int main(int argc, char *argv[]) {
     originalBoard = board;
     check(id, p);
 
+    printf("[%d] Boards received:%d\n", id, brecv );
     freeBoard(board);
     free(board);
 
