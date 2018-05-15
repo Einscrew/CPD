@@ -1,5 +1,5 @@
 CC=mpicc
-FLAGS=-g -Wall
+FLAGS=-g -Wall -std=c99
 EXTRA=-fopenmp
 FILE=2x2.txt
 P=2
