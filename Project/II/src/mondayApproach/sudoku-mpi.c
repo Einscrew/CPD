@@ -218,12 +218,14 @@ void listenNeighbors(int id, int p){
                     EXIT = TRUE;
                 }else if(msg == right){ // nothing I can do??? Neighbor need work, I don't have
                     work4neighbor = TRUE;
-                    printf("[%d] neighbor needs work ->[%d]\n", id, msg);
+                    printf("[%d] neighbor needs work ->[%d] \n", id, msg);
 
                     //Pass message wait 4 another
                     //wait = FALSE;                                         ???????????????????
                 }else if(msg == TERM){ // exit instruction
-                    printf("[%d] terminating ->[%d]\n", id, msg);fflush(stdout);
+                    printf("[%d] terminating ->[%d] EXIT = %c\n", id, msg, EXIT ? 'y' : 'n');fflush(stdout);
+                    EXIT = TRUE;
+
                     if(sendTermination == FALSE){
                         // Send TERM
                         MPI_Send(&msg, 1, MPI_INT, left, ASK_WORK, MPI_COMM_WORLD); 
