@@ -17,7 +17,7 @@ Board * finalBoard = NULL;
 
 int work4neighbor = FALSE;
 int EXIT = FALSE, TERM = FALSE;
-int NoSolution = FALSE, sendTermination = FALSE;
+int NoSolution = TRUE, sendTermination = FALSE;
 
 int msg;
 
@@ -71,8 +71,7 @@ void sendSolution(int id, int p){
             if(msg == finish_id){
                 msg = TERM;
                 iPrint= TRUE;
-            }
-            else if(msg == TERM){
+            }else if(msg == TERM){
                 if(!iPrint)
                     MPI_Send(&msg, 1, MPI_INT, left, ASK_WORK, MPI_COMM_WORLD ); // Receiver has to receive??
                 else
@@ -203,10 +202,11 @@ void listenNeighbors(int id, int p){
         
         if(recv){
 
-            if(msg == right || msg == TERM || msg < 0 || (msg >= 0 && work4neighbor == TRUE) /*|| msg == id*/){
+            if(msg == right || msg == TERM || msg < 0 || (msg >= 0 && work4neighbor == TRUE) || msg == id){
 
                 if(msg < 0){ // Solution found by a working node
                     EXIT = TRUE;
+                    NoSolution = FALSE;
                     printf("[%d] solution found ->[%d]\n", id, msg);fflush(stdout);
                     //Pass message wait 4 TERM          
                 }else if(msg == id){ //No solution
@@ -228,8 +228,14 @@ void listenNeighbors(int id, int p){
 
                     if(sendTermination == FALSE){
                         // Send TERM
-                        MPI_Send(&msg, 1, MPI_INT, left, ASK_WORK, MPI_COMM_WORLD); 
+                        MPI_Send(&msg, 1, MPI_INT, left, ASK_WORK, MPI_COMM_WORLD);
                     }
+
+                    if(NoSolution && id == 0){
+                    	printf("No solution\n");
+                    	fflush(stdout);
+                    } 
+
                     return;//??
                 }else{
                     printf("[%d] no match ->[%d]\n", id, msg);fflush(stdout);
@@ -238,12 +244,13 @@ void listenNeighbors(int id, int p){
                 //if(!((msg == TERM) && (NoSolution == TRUE)))
                 MPI_Send(&msg, 1, MPI_INT, left, ASK_WORK, MPI_COMM_WORLD); 
 	        }else{
-	            printf("[%d] ignoring ->[%d]\n", id, msg );
+	            printf("[%d] ignoring ->[%d]\n", id, msg);
 	        }
 
             MPI_Irecv(&msg, 1, MPI_INT, right, ASK_WORK, MPI_COMM_WORLD, &msgReq);
             recv = FALSE;
         }
+
     }while(EXIT);
 }
 
@@ -545,8 +552,10 @@ int main(int argc, char *argv[]) {
 
     //MPI_Recv
 
+    //printf("FINALIZE ID = %d\n", id);
     MPI_Finalize();
-    
+    printf("AFTER FINALIZE ID = %d\n", id);
+
     return 0;
 }
 
