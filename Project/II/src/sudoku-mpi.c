@@ -3,13 +3,32 @@
 #include <unistd.h>
 #include "sudoku-mpi.h"
 
+
 //#define OUT 1
-#define FINISH 123
-#define PRINT 231
-char found = FALSE;
+#define WORK 10
+#define IDLE -10
+#define NO_WORK 5
+#define  GET_WORK 555
+#define ASK_WORK 444
+
+
+
+Board * originalBoard = NULL;
 Board * finalBoard = NULL;
-char print = FALSE;
-char stopwork = FALSE;
+
+int work4neighbor = FALSE;
+int EXIT = FALSE, TERM = FALSE;
+int NoSolution = TRUE, sendTermination = FALSE;
+
+int msg;
+
+int startIndex = 0;
+
+int left, right;
+
+int iPrint = FALSE;
+
+MPI_Request msgReq, boardReq;
 
 /*******************************************************
 *    Makes a guess in a game board at a given index    *
@@ -40,80 +59,368 @@ int makeGuess(Board *b, int i)
     return FALSE;
 }
 
+
+void sendSolution(int id, int p){
+    int finish_id = id - p;
+    MPI_Status s;
+
+    MPI_Send(&finish_id, 1, MPI_INT, left, ASK_WORK, MPI_COMM_WORLD ); // Receiver has to receive??
+
+    MPI_Wait(&msgReq, &s);
+
+    do{
+        if(msg <= finish_id || msg == TERM){
+        
+            if(msg == finish_id){
+                msg = TERM;
+                iPrint= TRUE;
+            }else if(msg == TERM){
+                if(!iPrint)
+                    MPI_Send(&msg, 1, MPI_INT, left, ASK_WORK, MPI_COMM_WORLD ); // Receiver has to receive??
+                else
+                    printBoard(finalBoard);
+
+                EXIT = TRUE;
+                return;
+            }
+            MPI_Send(&msg, 1, MPI_INT, left, ASK_WORK, MPI_COMM_WORLD ); // Receiver has to receive??
+        }
+        MPI_Recv(&msg, 1, MPI_INT, right, ASK_WORK, MPI_COMM_WORLD, &s);
+    }while(1);
+}
+
+int giveWork(Board *b, int i, int id){
+    int sendFlag = FALSE, receiveFlag = FALSE, size;
+    char * compressed  = NULL;
+    MPI_Status s;
+
+    if(work4neighbor){
+
+        size = compressBoard(b, 0, i, &compressed);
+        MPI_Isend(compressed, size, MPI_BYTE, right, GET_WORK, MPI_COMM_WORLD, &boardReq);     
+        
+        while(!sendFlag){
+            //test if board request was completed
+            MPI_Test(&boardReq, &sendFlag, &s);
+            if( sendFlag ){
+                /*printf("[%d] compressed sent %d @ index: %d\n", id, size, i);
+                printf(">[%d]", id );
+                for (long int j = 0; j < size; ++j){
+                    printf("%d", compressed[j]);
+                    if((j+1)%5==0){
+                        printf("|");
+                    }
+                }
+                printf("\n");
+                fflush(stdout);*/
+
+                free(compressed);
+                work4neighbor = FALSE;
+                return WORK;
+            }
+
+            //verify if solution found
+            MPI_Test(&msgReq, &receiveFlag, &s);
+            if( receiveFlag ){
+                receiveFlag = FALSE;
+
+                if(msg < 0){
+                    MPI_Cancel(&boardReq);
+                    free(compressed);
+                    return IDLE;
+                }
+                MPI_Irecv(&msg, 1, MPI_INT, right, ASK_WORK, MPI_COMM_WORLD, &msgReq);
+            }
+        }
+    }else{
+
+        MPI_Test(&msgReq, &receiveFlag, &s);
+        if(receiveFlag){
+            receiveFlag = FALSE;
+            
+
+            if(msg < 0){
+                return IDLE;
+            }
+            else if(msg == right){ // have to give work
+                //printf("right [%d] needs work from %d\n", right, id);
+                MPI_Irecv(&msg, 1, MPI_INT, right, ASK_WORK, MPI_COMM_WORLD, &msgReq);
+
+                size = compressBoard(b, 0, i, &compressed);
+                MPI_Isend(compressed, size, MPI_BYTE, right, GET_WORK, MPI_COMM_WORLD, &boardReq);     
+                
+                while(!sendFlag){
+                    //test if board request was completed
+                    MPI_Test(&boardReq, &sendFlag, &s);
+                    if( sendFlag ){
+                       /* printf("[%d] compressed sent %d @ index: %d\n", id, size, i);
+                        printf(">[%d]", id );
+                        for (long int j = 0; j < size; ++j){
+                            printf("%d", compressed[j]);
+                            if((j+1)%5==0){
+                                printf("|");
+                            }
+                        }
+                        printf("\n");
+                        fflush(stdout);*/
+
+                        free(compressed);
+                        work4neighbor = FALSE;
+                        return WORK;
+                    }
+
+                    //verify if solution found
+                    MPI_Test(&msgReq, &receiveFlag, &s);
+                    if( receiveFlag ){
+                        receiveFlag = FALSE;
+                        if(msg < 0){
+                            MPI_Cancel(&boardReq);
+                            free(compressed);
+                            return IDLE;
+                        }
+                        
+                        MPI_Irecv(&msg, 1, MPI_INT, right, ASK_WORK, MPI_COMM_WORLD, &msgReq);
+                    }
+                }
+
+            }
+        
+            MPI_Irecv(&msg, 1, MPI_INT, right, ASK_WORK, MPI_COMM_WORLD, &msgReq);
+        }
+
+    }
+
+    return NO_WORK;
+
+}
+
+void listenNeighbors(int id, int p){
+// MPI_Waitany()??????????????????????????????????????????????????????????????????????????????
+    int recv = FALSE;
+    MPI_Status s;
+    
+    do{
+        
+        MPI_Test(&msgReq, &recv, &s);
+        
+        if(recv){
+
+            if(msg == right || msg == TERM || msg < 0 || (msg >= 0 && work4neighbor == TRUE) || msg == id){
+
+                if(msg < 0){ // Solution found by a working node
+                    EXIT = TRUE;
+                    NoSolution = FALSE;
+                    printf("[%d] solution found ->[%d]\n", id, msg);fflush(stdout);
+                    //Pass message wait 4 TERM          
+                }else if(msg == id){ //No solution
+                    sendTermination = TRUE;
+                    printf("[%d] no solution ->[%d]\n", id, msg);fflush(stdout);
+
+                    //Send TERM wait TERM
+                    msg = TERM;
+                    EXIT = TRUE;
+                }else if(msg == right){ // nothing I can do??? Neighbor need work, I don't have
+                    work4neighbor = TRUE;
+                    printf("[%d] neighbor needs work ->[%d] \n", id, msg);
+
+                    //Pass message wait 4 another
+                    //wait = FALSE;                                         ???????????????????
+                }else if(msg == TERM){ // exit instruction
+                    printf("[%d] terminating ->[%d] EXIT = %c\n", id, msg, EXIT ? 'y' : 'n');fflush(stdout);
+                    EXIT = TRUE;
+
+                    if(sendTermination == FALSE){
+                        // Send TERM
+                        MPI_Send(&msg, 1, MPI_INT, left, ASK_WORK, MPI_COMM_WORLD);
+                    }
+
+                    if(NoSolution && id == 0){
+                        printf("No solution\n");
+                        fflush(stdout);
+                    } 
+
+                    return;//??
+                }else{
+                    printf("[%d] no match ->[%d]\n", id, msg);fflush(stdout);
+                }
+
+                //if(!((msg == TERM) && (NoSolution == TRUE)))
+                MPI_Send(&msg, 1, MPI_INT, left, ASK_WORK, MPI_COMM_WORLD); 
+            }else{
+                printf("[%d] ignoring ->[%d]\n", id, msg);
+            }
+
+            MPI_Irecv(&msg, 1, MPI_INT, right, ASK_WORK, MPI_COMM_WORLD, &msgReq);
+            recv = FALSE;
+        }
+
+    }while(EXIT);
+}
+
+int GetOrCheckWork(Board * board, int id){
+    int ret = FALSE, size;
+    char * compressed = NULL;
+    MPI_Status s;
+
+    MPI_Iprobe(left, GET_WORK, MPI_COMM_WORLD, &ret, &s);
+    if(ret){
+        
+        MPI_Get_count(&s, MPI_BYTE, &size);
+        printf("[%d] will receive %d\n", id, size );
+        fflush(stdout);
+
+        compressed = malloc(size);
+
+        MPI_Recv(compressed, size, MPI_BYTE, left, GET_WORK, MPI_COMM_WORLD, &s);
+        
+        printf("<[%d]", id);
+        for (long int i = 0; i < size; ++i){
+            printf("%d", compressed[i]);
+            if((i+1)%5==0){
+                printf("|");
+            }
+        }
+        printf("\n");
+        fflush(stdout);
+
+        makeCopyBoard(board, originalBoard);
+        
+        /*printf("----originalBoard------\n");
+        printBoardT(board, id);
+        fflush(stdout);*/
+        
+        startIndex = decompressBoard(board, compressed, size, FALSE);
+        free(compressed);
+        
+        /*printf("----decompressBoard------\n");
+        printBoardT(board, id);
+        fflush(stdout);*/
+        
+        
+        return TRUE;
+    }
+   // printf("[%d] end checkWork()\n", id);
+    fflush(stdout);
+
+    return FALSE;
+}
+
 /****************************************************************************************
 *    Brute force algorithm that receives a board and finds a solution if there's one    *            										   	    *
 *****************************************************************************************/
+int bruteForce(Board *b, int start, int id, int p, int askWork){
+    int i = start, valid = TRUE;
+    int idcpy = id, area = b->size*b->size;
 
-int bruteForce(Board *b, int start, int id, int p, char * fid, MPI_Request *r){
-	int i = start, valid = TRUE, flag = FALSE;
+    for(i = start; i < area ; i++)
+    {
+        /*if(!id){
+            printf("[%d] ----working------\n", id);
+            //printBoardT(b, id);
+            printBM(b);
+            fflush(stdout);
+        }else{
+            printf(".");
+            fflush(stdout);
+        }*/
+        
+        
 
-    MPI_Status s;
-
-    //if MPI_Test)
-
-	for(i = start; i < b->size*b->size; i++)
-	{
-		if(valid == FALSE)
-		{
-			i--;
-			valid = TRUE;
-		}
+        if(valid == FALSE)
+        {
+            i--;
+            valid = TRUE;
+        }
         
         /* Looks for an unfixed cell */
-		if(b->gameBoard[i].fixed == FALSE)
-		{
+        if(b->gameBoard[i].fixed == FALSE)
+        {
+            //printf("ENTROU i = %d\n", i);
             /* Checks if there is a valid guess for that index */
-			if((valid = makeGuess(b, i)) == FALSE)
-			{
+            if((valid = makeGuess( b , i)) == TRUE){
+
+                switch(giveWork(b, i, id)){
+                    case IDLE: //alguem encontrou a solucao
+                       /* printf("[%d] end giveWork IDLE\n", id);
+                        fflush(stdout);*/
+                        EXIT = TRUE; // wait 4 TERM
+                        NoSolution = FALSE;
+                        MPI_Send(&msg, 1, MPI_INT, left, ASK_WORK, MPI_COMM_WORLD); 
+                        MPI_Irecv(&msg, 1, MPI_INT, right, ASK_WORK, MPI_COMM_WORLD, &msgReq);
+                        listenNeighbors(id, p); // always ends the process (EXIT = TRUE)
+                        return FALSE;
+                        break;
+                    
+                    case WORK:
+                        /*printf("[%d] end giveWork WORK\n", id);
+                        fflush(stdout);*/
+                        
+                        valid = makeGuess(b, i); 
+                        if(valid == TRUE){
+                            //printf("EHEHEHEHEHE[%d]@%d\n", id, i);
+                        }   
+                        break;
+
+                }
+                
+            /*
+            */
+            }
+            if(valid == FALSE)
+            {
                 /* If there's no possible value for that unfixed index, it has to backtrack to the last unfixed cell */
-				do
-				{
+                do
+                {
                     /* Put back the 0 value into the unfixed cell and removes masks */
-					if(b->gameBoard[i].fixed == FALSE)
-					{
+                    if(b->gameBoard[i].fixed == FALSE)
+                    {
                         removeMasks(b, i);
                         b->gameBoard[i].value = 0;
-					}
+                    }
 
-					i--;
+                    i--;
 
-				}while (i >= start && (b->gameBoard[i].fixed == TRUE || b->gameBoard[i].value == b->size));
+                }while (i >= start && (b->gameBoard[i].fixed == TRUE || b->gameBoard[i].value == b->size));
 
-				/* If the index is < 0, then there's no solution for the gicen sudoku */
-				if(i < start)
+                /* If the index is < 0, then there's no solution for the gicen sudoku */
+                if(i < start)
                 {
-					//printf("No solution\n");
-					return FALSE;
-				}
-			}
-		}
-
-        MPI_Test(r, &flag, &s);
-        if (flag != 0){
-            printf("[%d] terminated bruteForce\n", id);
-            fflush(stdout);
-            stopwork = TRUE;
-            return FALSE;
+                    //printf("No solution\n");
+                    if(askWork){
+                        idcpy = id;
+                        MPI_Send(&idcpy, 1, MPI_INT, left, ASK_WORK, MPI_COMM_WORLD ); // Receiver has to receive??
+                        printf("[%d] ASKED work %d\n", id, left);
+                        fflush(stdout);
+                    }
+                    return FALSE;
+                }
+            }
         }
-	}
-	/* If the solution is find, print it */
 
-
-    // send Solution Alert
-    //int MPI_Send(const void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm)
+    }
+    
+    finalBoard = b;
+    //send Solution Alert
+    sendSolution(id, p);
     printf("[%d]FINISH\n", id);
     fflush(stdout);
+    NoSolution = FALSE;
 
-    finalBoard = b;
-    found = TRUE;
     return TRUE;
 }
 
-void checkPossibilities(Board * b, int cindex, int index, int * possible){
-    if(cindex > b->size*b->size-1)
+void checkPossibilities(Board * b, int cindex, int index, int * possible, int id){
+    if(cindex > b->size*b->size-1){
+        NoSolution = FALSE;
+
+        if(id == 0){
+            printBoard(b);
+            fflush(stdout);
+        }
         return;
+    }
     if(b->gameBoard[cindex].fixed){
-        checkPossibilities(b, cindex+1, index+1, possible);
+        checkPossibilities(b, cindex+1, index+1, possible, id);
     }
     else{
         for (int value = 1; value <= b->size; value++)
@@ -127,7 +434,7 @@ void checkPossibilities(Board * b, int cindex, int index, int * possible){
                 else{
                     b->gameBoard[cindex].value = value;
                     updateMasks(b, cindex);
-                    checkPossibilities(b, cindex+1, index, possible);
+                    checkPossibilities(b, cindex+1, index, possible, id);
                     removeMasks(b, cindex);
                     b->gameBoard[cindex].value = 0;
                 }
@@ -137,115 +444,44 @@ void checkPossibilities(Board * b, int cindex, int index, int * possible){
         
     }
 }
-void termination(int id, int p,  MPI_Request *rr, char *fid){
-    
-    MPI_Request rs;
-    MPI_Status s;
-    char copyid;
-    char pid = -1, finish = 0;
-    int from = (id==0)?(p-1):(id-1), flagr = 0, flags = 0;
 
+void initialWork(Board * b, int cindex, int index, int * possible, int id, int p){
 
-    //APAGAR
-    int recv = 0, send = 0;
-    
-    
-    copyid = id;
-    
-
-    if(found==TRUE) MPI_Isend(&copyid, 1, MPI_CHAR, (id+1)%p, FINISH, MPI_COMM_WORLD, &rs);
-
-    //printf("[%d]copyid %d\n", id, copyid);
-
-    while(recv == 0){
-        //trabalhjo.amawokdawd
-        //awidampwd
-        MPI_Test(rr ,&flagr ,&s);
-        recv = (flagr==0)?recv:1;
-    }
-    //printf("[%d] recebeu fid: %d\n", id, fid );
-    if(found == TRUE){
-        while(send == 0){
-            //trabalhjo.amawokdawd
-            //awidampwd
-            MPI_Test(&rs ,&flags ,&s);
-            send = (flags==0)?send:1;
-        }
-    }
-
-    if(*fid >= id || found == FALSE){
-        //if(*fid == id) printf("1st msg by [%d]\n", id );
-        if(*fid > pid)
-            pid = *fid;
-    
-        //printf("[%d] vai tentar enviar fid: %d\n", id, *fid );
-        MPI_Send(fid, 1, MPI_CHAR, (id+1)%p, FINISH, MPI_COMM_WORLD);
-        //printf("[%d] enviou  fid: %d\n", id, *fid );
-    }
-    
-    do{
-        MPI_Recv(fid, 1,MPI_CHAR, from, FINISH, MPI_COMM_WORLD, &s);
-        //printf("[%d] recebeu fid: %d ---\n", id, *fid );
-        if(*fid == pid || *fid == id){
-            if(*fid == pid) finish = 1;
-            if(pid != id){
-                MPI_Send(fid, 1, MPI_CHAR, (id+1)%p, FINISH, MPI_COMM_WORLD);
-                //printf("[%d] enviou  fid: %d ---\n", id, *fid );
-            }
-            pid = *fid;
-        }else if(*fid > pid){
-            //printf("[%d]dawdaw fid:%d pid:%d\n",  id, *fid, pid);
-            pid = *fid;
-            
-            if(*fid >= id){
-                MPI_Send(fid, 1, MPI_CHAR, (id+1)%p, FINISH, MPI_COMM_WORLD);
-                //printf("[%d] enviou  fid: %d ---\n", id, *fid );
-            }
-        }
-    }while(finish == 0);
-
-    if(*fid == id){
-        //printf("\n[%d]IHNAWDIAWND\n\n", id);
-        printBoard(finalBoard);
-    }
-
-}
-void work(Board * b, int cindex, int index, int * possible, int id, int p, char *fid, MPI_Request *r){
 
     if(cindex > b->size*b->size-1)
         return;
     if(b->gameBoard[cindex].fixed){
-        work(b, cindex+1, index+1, possible, id, p, fid, r);
+        initialWork(b, cindex+1, index+1, possible, id, p);
     }
     else{
         for (int value = 1; value <= b->size; value++)
         {
-            if (found == TRUE || stopwork == TRUE){
+            if (NoSolution == FALSE){
                 return;
             }
             if(checkValidityMasks(b, cindex, value) == TRUE)
             {
-            
                 if(cindex == index){
                     if(*possible%p == id){
-                        #ifdef OUT 
+                        
                         printf("[%d]-Will process %d @ index: %d\n", id, *possible, cindex);
-                        #endif
                         b->gameBoard[cindex].value = value;
                      
                         updateMasks(b, cindex);     
-                        if(bruteForce(b, cindex+1, id, p, fid, r) == FALSE){
+                        if(bruteForce(b, cindex+1, id, p, FALSE) == FALSE){
                             removeMasks(b, cindex);
                             b->gameBoard[cindex].value = 0;
                         }
+                        if(NoSolution == FALSE)
+                            return;
                     }
                     *possible +=1;
                 }
                 else{
                     b->gameBoard[cindex].value = value;
                     updateMasks(b, cindex);
-                    work(b, cindex+1, index, possible, id, p, fid, r);
-                    if(found == FALSE){
+                    initialWork(b, cindex+1, index, possible, id, p);
+                    if(NoSolution == TRUE){
                         removeMasks(b, cindex);
                         b->gameBoard[cindex].value = 0;
                     }
@@ -256,71 +492,60 @@ void work(Board * b, int cindex, int index, int * possible, int id, int p, char 
     }
 }
 
-int check(Board *b, int id, int p){
 
+int check(int id, int p){
+
+    int idcpy = id, index = 0;
     int possible = 0;
-    int index = 0;
-    char fid = FALSE;
+    int maxP = (p>200)?200:p;   
 
-    MPI_Request r;
+    left = (id==0)?p-1:id-1;
+    right = (id+1)%p;
 
-    double t = -MPI_Wtime();
-    //IF BOARD COMPLETE ...........................................
-    
-    while(p > possible){
+    Board * board = copyBoard(originalBoard);
+
+    TERM = p+1;
+
+    while( maxP > possible){
         possible = 0;
-        checkPossibilities(b, 0, index, &possible);
+        checkPossibilities(board, 0, index, &possible, id);
+        if(NoSolution == FALSE){
+            return 0;
+        }
         #ifdef OUT 
         printf("[%d]-trying: %d - p: %d\n",id, index, possible);
         #endif
         index++;
-        if(possible == 0){
-            break;
-        }
-        
     }
-    t += MPI_Wtime();
     index--;
-    #ifdef OUT 
-    printf("[%d]-Index: %d\n\tPossibilities: %d\tTime: %lf\n",id,  index, possible, t);
-    #endif
+
+    //t += MPI_Wtime();
+
+    MPI_Irecv(&msg, 1, MPI_INT, right, ASK_WORK, MPI_COMM_WORLD, &msgReq);
     
-    if(possible != 0){
+    if(id < 200){ // Test your own possibilities
         possible = 0;
-        #ifdef OUT 
-        printf("[%d]-Going to work: index: %d\tpossible: %d\tid: %d\tp: %d\n",id,  index, possible, id, p);
-        #endif
-
-        //int MPI_Irecv(void *buf, int count, MPI_Datatype datatype, int source, int tag, MPI_Comm comm, MPI_Request *request)
-        MPI_Irecv(&fid, 1, MPI_CHAR, (id==0)?p-1:id-1, FINISH, MPI_COMM_WORLD, &r );
-        work(b, 0, index, &possible, id, p, &fid, &r);
-
-        
-        if(stopwork == TRUE)
-            printf("[%d]Stopped Work\n", id);
-        
-        if(found == TRUE)
-            printf("[%d]Discovered a solution\n", id);
-
-
-        if(found == FALSE && stopwork == FALSE){
-            printf("[%d]No more Work\n", id);
-            fflush(stdout);
-        }
-        
-        termination(id, p, &r, &fid);
-
-    }else{   
-        #ifdef OUT 
-        printf("[%d]-Didn't work\n", id );
-        #endif
+        printf("[%d]- Hello\n",id);
+        initialWork(board, 0, index, &possible, id, p);
     }
 
-    return possible;
-
+    if(NoSolution == TRUE){
+        MPI_Isend(&idcpy, 1, MPI_INT, left, ASK_WORK, MPI_COMM_WORLD, &boardReq); 
+    }
+      
+    while(!EXIT){
+        printf("[%d]-OUT OF WORK\n", id);
+        if( NoSolution==TRUE && GetOrCheckWork(board, id) ){ // updates haveWork
+            /*printf("[%d] will work\n", id);
+            printBoardT(board, id);
+            fflush(stdout);*/
+            bruteForce( board,  startIndex,  id,  p, TRUE);
+        }else{
+            listenNeighbors(id, p);
+        }
+    }
+    return 0;
 }
-
-
 /****************************************************************************
 *    Allocs a board, fills that board and find a solution if there's one    *
 *                                        			   						*
@@ -329,13 +554,12 @@ int check(Board *b, int id, int p){
 
 int main(int argc, char *argv[]) {
 
-    Board *board = (Board*)malloc(sizeof(Board));;
+    Board *board = (Board*)malloc(sizeof(Board));
     char * r;
     char * first = malloc(sizeof(char)+sizeof(int));
     int s = 0 ;
     /* Checks if teh user gives the input file */
     int id, p;
-    double t = 0;
 
     // MPI_INIT & MPI_COMM
     MPI_Init (&argc, &argv);
@@ -350,10 +574,19 @@ int main(int argc, char *argv[]) {
             if((fillGameBoard(board, argv[1])) == 0)
             {
                 r = NULL;
-                s = compressBoard(board, 1, -1, &r);
+                s = compressBoard(board, 1, board->size*board->size-1 , &r);
                 memcpy(first, &board->squareSize, sizeof(char));
                 memcpy(&first[sizeof(char)], &s, sizeof(int));
+                /*halfbruteForce(board);
+                free(r);
 
+                s = compressBoard(board, 0, board->size*board->size/2, &r );
+
+                decompressBoard(board, r, s);
+                printBoard(board);
+                free(r);
+                freeBoard(board);
+                free(board);*/
             }
         }
         else
@@ -364,17 +597,15 @@ int main(int argc, char *argv[]) {
         }
     }
        
-    //verificar isto
-
-    
+    //verificar isto    
     MPI_Barrier(MPI_COMM_WORLD);
-    t = -MPI_Wtime();
     MPI_Bcast(first, sizeof(char)+sizeof(int), MPI_BYTE, 0, MPI_COMM_WORLD);
 
    if(id){
 
         memcpy(&board->squareSize, first, sizeof(char));
         board->size = board->squareSize*board->squareSize;
+        board->gameBoard = NULL;
 
         memcpy(&s, &first[sizeof(char)], sizeof(int));
 
@@ -387,6 +618,7 @@ int main(int argc, char *argv[]) {
     MPI_Bcast(r, s, MPI_BYTE, 0, MPI_COMM_WORLD);
 
     if(id){
+
         /*
         printf(">%d|",r[0]);
         for (long int i = 1; i < s; ++i){
@@ -397,30 +629,39 @@ int main(int argc, char *argv[]) {
         }
         printf("\n");
         fflush(stdout);
+        
         */
-        decompressBoard(board, r, s);
-        t += MPI_Wtime();
+        
+        decompressBoard(board, r, s, TRUE);
+        
         //printf("%d\n", board->squareSize);
         //printf("Does process %d work? %c\n",id, (check(board))?'Y':'N' );
-       /* if(id==1){
+        /*if(id==1){
             printf("TIME:::%lf\n", t);
             printBoard(board);
         }*/
     }
+        
+
 
     free(r); //<--------------------------------------------------------------------------
-
-    check(board, id, p);
+    
+    originalBoard = board;
+    check(id, p);
 
     freeBoard(board);
     free(board);
-    //c
+
+    
 
     //MPI_Recv
 
+    //printf("FINALIZE ID = %d\n", id);
     MPI_Finalize();
-    
+    printf("AFTER FINALIZE ID = %d\n", id);
+
     return 0;
 }
+
 
 

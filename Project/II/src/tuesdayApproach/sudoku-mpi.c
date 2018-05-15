@@ -343,6 +343,7 @@ int bruteForce(Board *b, int start, int id, int p){
                        /* printf("[%d] end giveWork IDLE\n", id);
                         fflush(stdout);*/
                         EXIT = TRUE; // wait 4 TERM
+                        NoSolution = FALSE;
                         MPI_Send(&msg, 1, MPI_INT, left, ASK_WORK, MPI_COMM_WORLD); 
                         MPI_Irecv(&msg, 1, MPI_INT, right, ASK_WORK, MPI_COMM_WORLD, &msgReq);
                         listenNeighbors(id, p); // always ends the process (EXIT = TRUE)
@@ -401,7 +402,8 @@ int bruteForce(Board *b, int start, int id, int p){
     sendSolution(id, p);
     printf("[%d]FINISH\n", id);
     fflush(stdout);
-    
+    NoSolution = FALSE;
+
     return TRUE;
 }
 
