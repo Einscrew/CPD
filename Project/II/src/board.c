@@ -43,17 +43,17 @@ int allocBoard(Board *b)
 }
 
 int makeCopyBoard(Board* dst, Board * src){
-    int i = 0;
+
     dst->size = src->size;
     dst->squareSize = src->squareSize;
     
     /* Copies the original board to the new board */
-    for(i = 0 ; i < src->size*src->size ; i++){
+    for(int i = 0 ; i < src->size*src->size ; i++){
         dst->gameBoard[i].value = src->gameBoard[i].value;
         dst->gameBoard[i].fixed = src->gameBoard[i].fixed;
     }
 
-    for (i = 0; i < src->size; i++)
+    for (int i = 0; i < src->size; i++)
     {
         dst->rowMask[i][0] = src->rowMask[i][0];
         dst->rowMask[i][1] = src->rowMask[i][1];
@@ -82,7 +82,6 @@ int makeCopyBoard(Board* dst, Board * src){
 Board * copyBoard(Board * original){
 
     Board * new = (Board *)malloc(sizeof(Board));
-    int i = 0;
 
     new->size = original->size;
     new->squareSize = original->squareSize;
@@ -91,11 +90,11 @@ Board * copyBoard(Board * original){
     allocBoard(new);
     
     /* Copies the original board to the new board */
-    for(i = 0 ; i < original->size*original->size ; i++){
+    for(int i = 0 ; i < original->size*original->size ; i++){
         new->gameBoard[i].value = original->gameBoard[i].value;
         new->gameBoard[i].fixed = original->gameBoard[i].fixed;
     }
-    for (i = 0; i < original->size; i++)
+    for (int i = 0; i < original->size; i++)
     {
         new->rowMask[i][0] = original->rowMask[i][0];
         new->rowMask[i][1] = original->rowMask[i][1];

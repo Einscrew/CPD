@@ -3,6 +3,6 @@
 
 #include "board.h"
 
-int bruteForce(Board *b, int start, int id, int p, int askWork);
+int bruteForce(Board *b, int start, int id, int p);
 
 #endif
