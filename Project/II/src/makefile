@@ -12,7 +12,7 @@ $(NAME): $(NAME).o  board.o
 $(NAME).o: $(NAME).c board.h
 	$(CC) -c $^ $(FLAGS)
 
-board.o: board.c
+board.o: board.c board.h
 	$(CC) -c $^ $(FLAGS)
 
 clean:

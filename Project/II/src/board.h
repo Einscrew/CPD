@@ -25,7 +25,6 @@
 #define valid(v, m) (((mask(v) & m) == 0)?1:0)
 #define removemask(m,r) ( m & (~(mask(r))) )
 
-
 typedef struct Cell{
     char value;
     char fixed;

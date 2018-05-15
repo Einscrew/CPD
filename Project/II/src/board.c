@@ -1,5 +1,7 @@
 #include "board.h"
 
+int emptyCells=0;
+
 /******************************************
 *    Allocs a game board and its masks    *
 *                                         *
@@ -259,6 +261,7 @@ int fillGameBoard(Board *board, char const* file)
                     if(atoi(aux) == 0)
                     {
                         board->gameBoard[index].fixed = FALSE;
+                        emptyCells++;
 
                     }else
                     {
@@ -325,9 +328,13 @@ int compressBoard(Board * b, int fixed, int index, char ** r){
 
 
 int decompressBoard(Board * b, char * r, int s, int fixed){
-    int current = 0, index = 0, i , area, m_index, value;
+    int current = 0, index = 0, i , area=b->size * b->size, m_index, value;
 
-    area = b->size * b->size;
+    if(fixed)
+        emptyCells = area;
+    else
+        emptyCells = 0;
+
     if(b->gameBoard == NULL){
         allocBoard(b);
         for ( i = 0; i < area; ++i)
@@ -345,7 +352,9 @@ int decompressBoard(Board * b, char * r, int s, int fixed){
         value = r[current];
         memcpy(&(b->gameBoard[index].value), &value, sizeof(char));
         current += sizeof(char);
-        b->gameBoard[index].fixed = (fixed)?TRUE:FALSE;
+        b->gameBoard[index].fixed = fixed;
+
+        emptyCells = (fixed)?(emptyCells-1):(emptyCells+1);
         
         //TODO: update masks <------------------------------
         m_index = value/32;

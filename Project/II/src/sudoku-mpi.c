@@ -4,7 +4,7 @@
 #include "sudoku-mpi.h"
 
 
-//#define OUT 1
+#define OUT 1
 #define WORK 10
 #define IDLE -10
 #define NO_WORK 5
@@ -12,6 +12,7 @@
 #define ASK_WORK 444
 
 
+int extern emptyCells;
 
 Board * originalBoard = NULL;
 Board * finalBoard = NULL;
@@ -224,7 +225,7 @@ void listenNeighbors(int id, int p){
         
         if(recv){
 
-            if(msg == right || msg == TERM || msg < 0 || (msg >= 0 && work4neighbor == TRUE) || msg == id){
+            if((msg == right && work4neighbor==FALSE) || msg == TERM || msg < 0 || (msg >= 0 && work4neighbor == TRUE) || (msg == id && work4neighbor == TRUE)){
 
                 if(msg < 0){ // Solution found by a working node
                     EXIT = TRUE;
@@ -286,6 +287,7 @@ void listenNeighbors(int id, int p){
             MPI_Irecv(&msg, 1, MPI_INT, right, ASK_WORK, MPI_COMM_WORLD, &msgReq);
             recv = FALSE;
         }
+    
 
     }while(EXIT);
 }
@@ -401,15 +403,17 @@ int bruteForce(Board *b, int start, int id, int p, int askWork){
                         NoSolution = FALSE;
                         MPI_Send(&msg, 1, MPI_INT, left, ASK_WORK, MPI_COMM_WORLD); 
                         MPI_Irecv(&msg, 1, MPI_INT, right, ASK_WORK, MPI_COMM_WORLD, &msgReq);
+                        //
+                        printf("[%d] will listenNeighbors bruteForce ask:%d\n", id, askWork );
                         listenNeighbors(id, p); // always ends the process (EXIT = TRUE)
                         return FALSE;
                         break;
                     
                     case WORK:
-                        /*printf("[%d] end giveWork WORK\n", id);
                         #ifdef OUT
+                        printf("[%d] end giveWork WORK to %d\n", id, right);
+                        fflush(stdout);
                         #endif
-                        fflush(stdout);*/
                         
                         valid = makeGuess(b, i); 
                         if(valid == TRUE){
@@ -594,10 +598,10 @@ int check(int id, int p){
     
     if(id < 200){ // Test your own possibilities
         possible = 0;
-        #ifdef OUT
-        printf("[%d]- Hello\n",id);
-        #endif
         initialWork(board, 0, index, &possible, id, p);
+        #ifdef OUT
+        printf("[%d]- Exit initialWork\n",id);
+        #endif
     }
 
     if(NoSolution == TRUE){
