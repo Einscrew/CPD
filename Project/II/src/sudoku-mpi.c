@@ -774,6 +774,7 @@ int main(int argc, char *argv[]) {
     if(!id)printf("TIME: %dm%lfs\n", (int)t/60, t-t/60);
     #endif
 
+    fflush(stdout);
     //MPI_Recv
 
     #ifdef OUT
