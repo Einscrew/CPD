@@ -4,6 +4,7 @@
 #include "sudoku-mpi.h"
 
 
+#define AREA_FACTOR 2
 //#define OUT 1
 #define WORK 10
 #define IDLE -10
@@ -114,10 +115,10 @@ fflush(stdout);*/
 
 int giveWork(Board *b, int i, int id){
     int area = b->size*b->size;
-    int sendFlag = FALSE, receiveFlag = FALSE, size, didSend = (emptyCells > area/5);
+    int sendFlag = FALSE, receiveFlag = FALSE, size;
+    int didSend = (emptyCells > area/AREA_FACTOR) ? (TRUE):(FALSE);// = TRUE;
     char * compressed  = NULL;
     MPI_Status s;
-
     if(work4neighbor){
 
         if(didSend){
@@ -134,7 +135,7 @@ int giveWork(Board *b, int i, int id){
                     work4neighbor = FALSE;
                     return WORK;
                 }
-            }else{
+            }else{               
                 sendFlag = TRUE;
             }
             //verify if solution found
@@ -160,41 +161,37 @@ int giveWork(Board *b, int i, int id){
             if(msg < 0){
                 return IDLE;
             }
-            else if(msg == right){ // have to give work
-                #ifdef OUT
-                //printf("right [%d] needs work from %d\n", right, id);
-                #endif
-                MPI_Irecv(&msg, 1, MPI_INT, right, ASK_WORK, MPI_COMM_WORLD, &msgReq);
+            else if(msg == right){
                 work4neighbor = TRUE;
+                if(didSend){ // have to give work
+                    #ifdef OUT
+                    //printf("right [%d] needs work from %d\n", right, id);
+                    #endif
+                    MPI_Irecv(&msg, 1, MPI_INT, right, ASK_WORK, MPI_COMM_WORLD, &msgReq);
+                    work4neighbor = TRUE;
 
-                if(didSend){
                     size = compressBoard(b, 0, i, &compressed);
                     MPI_Isend(compressed, size, MPI_BYTE, right, GET_WORK, MPI_COMM_WORLD, &boardReq);     
-                    
-                }
-                
-                while(!sendFlag){
-                    if(didSend){
+
+                    while(!sendFlag){
                         MPI_Test(&boardReq, &sendFlag, &s);
                         if( sendFlag ){
                             free(compressed);
                             work4neighbor = FALSE;
                             return WORK;
                         }
-                    }else{
-                        sendFlag = TRUE;
-                    }
-                    //verify if solution found
-                    MPI_Test(&msgReq, &receiveFlag, &s);
-                    if( receiveFlag ){
-                        receiveFlag = FALSE;
+                        //verify if solution found
+                        MPI_Test(&msgReq, &receiveFlag, &s);
+                        if( receiveFlag ){
+                            receiveFlag = FALSE;
 
-                        if(msg < 0){
-                            MPI_Cancel(&boardReq);
-                            free(compressed);
-                            return IDLE;
+                            if(msg < 0){
+                                MPI_Cancel(&boardReq);
+                                free(compressed);
+                                return IDLE;
+                            }
+                            MPI_Irecv(&msg, 1, MPI_INT, right, ASK_WORK, MPI_COMM_WORLD, &msgReq);
                         }
-                        MPI_Irecv(&msg, 1, MPI_INT, right, ASK_WORK, MPI_COMM_WORLD, &msgReq);
                     }
                 }
             }
@@ -289,6 +286,7 @@ int GetOrCheckWork(Board * board, int id){
     int ret = FALSE, size;
     char * compressed = NULL;
     MPI_Status s;
+
 
     MPI_Iprobe(left, GET_WORK, MPI_COMM_WORLD, &ret, &s);
     if(ret){
@@ -415,9 +413,7 @@ int bruteForce(Board *b, int start, int id, int p, int askWork){
                             #endif
                         }   
                         break;
-
                 }
-                
             /*
             */
             }
@@ -447,9 +443,6 @@ int bruteForce(Board *b, int start, int id, int p, int askWork){
                     if(askWork){
                         idcpy = id;
                         MPI_Send(&idcpy, 1, MPI_INT, left, ASK_WORK, MPI_COMM_WORLD ); // Receiver has to receive??
-                        #ifdef OUT
-                        printf("[%d] ASKED work %d\n", id, left);
-                        #endif
                         fflush(stdout);
                     }
                     return FALSE;
@@ -464,9 +457,9 @@ int bruteForce(Board *b, int start, int id, int p, int askWork){
     //send Solution Alert
     printf("[%d]FINISH\n", id);
     fflush(stdout);
-    sendSolution(id, p);
     #ifdef OUT
     #endif
+    sendSolution(id, p);
     NoSolution = FALSE;
 
     return TRUE;
@@ -594,19 +587,24 @@ int check(int id, int p){
     if(id < 200){ // Test your own possibilities
         possible = 0;
         initialWork(board, 0, index, &possible, id, p);
+        printf("[%d]- Exit initialWork\n",id);
         #ifdef OUT
         #endif
     }
-    printf("[%d]- Exit initialWork\n",id);
 
     if(NoSolution == TRUE){
+        
         MPI_Isend(&idcpy, 1, MPI_INT, left, ASK_WORK, MPI_COMM_WORLD, &boardReq); 
     }
-      
-    while(!EXIT){
-        #ifdef OUT
+    
+
+    #ifdef OUT
+    printf("[%d]-OUT OF WORK after init \n", id);
+    if(EXIT == FALSE)
         printf("[%d]-OUT OF WORK\n", id);
-        #endif
+    #endif
+
+    while(!EXIT){
         if( NoSolution==TRUE && GetOrCheckWork(board, id) ){ // updates haveWork
             /*printf("[%d] will work\n", id);
             #ifdef OUT
