@@ -3,8 +3,11 @@
 #include <unistd.h>
 #include "sudoku-mpi.h"
 
+//#define TRUE_FACTOR 1
+//#define AREA_FACTOR 5
+#define EC_FACTOR 5
 
-#define AREA_FACTOR 2
+
 //#define OUT 1
 #define WORK 10
 #define IDLE -10
@@ -116,7 +119,19 @@ fflush(stdout);*/
 int giveWork(Board *b, int i, int id){
     int area = b->size*b->size;
     int sendFlag = FALSE, receiveFlag = FALSE, size;
-    int didSend = (emptyCells > area/AREA_FACTOR) ? (TRUE):(FALSE);// = TRUE;
+    
+    #ifdef TRUE_FACTOR
+    int didSend = TRUE;
+    #endif
+
+    #ifdef EC_FACTOR
+    int didSend = (emptyCells > originalEmptyCells/EC_FACTOR) ? (TRUE):(FALSE);
+    #endif
+    
+    #ifdef AREA_FACTOR
+    int didSend = (emptyCells > area/AREA_FACTOR) ? (TRUE):(FALSE);
+    #endif
+
     char * compressed  = NULL;
     MPI_Status s;
     if(work4neighbor){
@@ -526,7 +541,7 @@ void initialWork(Board * b, int cindex, int index, int * possible, int id, int p
                         #endif
                         b->gameBoard[cindex].value = value;
                      
-                        updateMasks(b, cindex);     
+                        updateMasks(b, cindex);
                         if(bruteForce(b, cindex+1, id, p, FALSE) == FALSE){
                             removeMasks(b, cindex);
                             b->gameBoard[cindex].value = 0;
@@ -728,12 +743,13 @@ int main(int argc, char *argv[]) {
             #ifdef OUT
             printf("TIME:::%lf\n", t);
             #endif
-            printBoard(board);
+            printBoard(board);\
         }*/
     }
     free(r); //<--------------------------------------------------------------------------
     
     originalBoard = board;
+
     check(id, p);
 
     printf("[%d] Boards received:%d\n", id, brecv );
