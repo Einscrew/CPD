@@ -7,6 +7,8 @@
 //#define AREA_FACTOR 5
 #define EC_FACTOR 5
 
+#define STATISTICS 1
+#define TIME 1
 
 //#define OUT 1
 #define WORK 10
@@ -72,7 +74,6 @@ void sendSolution(int id, int p){
     MPI_Status s;
 
     MPI_Send(&finish_id, 1, MPI_INT, left, ASK_WORK, MPI_COMM_WORLD ); // Receiver has to receive??
-    printf("[%d] I send finish_id (%d)\n", id, finish_id );
     MPI_Wait(&msgReq, &s);
 
     do{
@@ -644,7 +645,8 @@ int main(int argc, char *argv[]) {
     Board *board = (Board*)malloc(sizeof(Board));
     char * r;
     char * first = malloc(sizeof(char)+sizeof(int));
-    int s = 0 ;
+    double t= 0;
+    int s = 0, total = 0;
     /* Checks if teh user gives the input file */
     int id, p;
 
@@ -750,13 +752,27 @@ int main(int argc, char *argv[]) {
     
     originalBoard = board;
 
+    t = -MPI_Wtime();
     check(id, p);
+    t += MPI_Wtime();
 
+    #ifdef STATISTICS
     printf("[%d] Boards received:%d\n", id, brecv );
+    #endif
+
     freeBoard(board);
     free(board);
 
-    
+    #ifdef STATISTICS
+    MPI_Reduce(&brecv, &total, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+    if(!id){
+        printf("------------------------------------\n[%d] Total boards received:%d\n", id, total );
+    }
+    #endif
+
+    #ifdef TIME
+    if(!id)printf("TIME: %lf\n", t);
+    #endif
 
     //MPI_Recv
 
