@@ -3,9 +3,9 @@
 #include <unistd.h>
 #include "sudoku-mpi.h"
 
-//#define TRUE_FACTOR 1
+#define TRUE_FACTOR 1
 //#define AREA_FACTOR 5
-#define EC_FACTOR 5
+//#define EC_FACTOR 5
 
 #define STATISTICS 1
 #define TIME 1
