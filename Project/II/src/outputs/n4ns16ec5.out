@@ -1,0 +1,13 @@
+possibilities: >>>6<<<	 index: >>>0<<<
+[3]- Exit initialWork
+[2]- Exit initialWork
+[1]- Exit initialWork
+[0]- Exit initialWork
+[1] Boards received:1115028
+No solution
+[2] Boards received:4613842
+[3] Boards received:905234
+[0] Boards received:0
+------------------------------------
+[0] Total boards received:6634104
+TIME: 10m631.670262s
