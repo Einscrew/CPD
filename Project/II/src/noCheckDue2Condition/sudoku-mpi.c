@@ -177,6 +177,7 @@ int giveWork(Board *b, int i, int id){
                     if(didSend){
                         MPI_Test(&boardReq, &sendFlag, &s);
                         if( sendFlag ){
+
                             free(compressed);
                             work4neighbor = FALSE;
                             return WORK;
@@ -584,8 +585,6 @@ int check(int id, int p){
         index++;
     }
     index--;
-
-    if(!id) printf("possibilities: >>>%d<<<\t index: >>>%d<<<\n", possible, index);
 
     //t += MPI_Wtime();
 
