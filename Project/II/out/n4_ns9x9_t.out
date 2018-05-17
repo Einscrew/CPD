@@ -1,4 +1,13 @@
--------------------------------------------------------
-Primary job  terminated normally, but 1 process returned
-a non-zero exit code.. Per user-direction, the job has been aborted.
--------------------------------------------------------
+possibilities: >>>16<<<	 index: >>>1<<<
+[2]- Exit initialWork
+[3]- Exit initialWork
+[1]- Exit initialWork
+[0]- Exit initialWork
+[3] Boards received:7570
+[2] Boards received:19037
+No solution
+[1] Boards received:25493
+[0] Boards received:0
+------------------------------------
+[0] Total boards received:52100
+TIME: 0m5.763823s
