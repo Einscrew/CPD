@@ -45,6 +45,12 @@ int allocBoard(Board *b)
     return 0;
 }
 
+/*****************************************************
+*    Copies a game board and its masks               *
+*                                                    *
+* Returns: a game board                              *
+*****************************************************/
+
 int makeCopyBoard(Board* dst, Board * src){
     int i = 0;
     dst->size = src->size;
@@ -72,9 +78,7 @@ int makeCopyBoard(Board* dst, Board * src){
     }
 
     return 1;
-
 }
-
 
 /*****************************************************
 *    Allocs and copies a game board and its masks    *
@@ -85,33 +89,16 @@ int makeCopyBoard(Board* dst, Board * src){
 Board * copyBoard(Board * original){
 
     Board * new = (Board *)malloc(sizeof(Board));
-    int i = 0;
 
     new->size = original->size;
     new->squareSize = original->squareSize;
 
     /* Allocs memory to the game board and masks */
     allocBoard(new);
-    
+
     /* Copies the original board to the new board */
-    for(i = 0 ; i < original->size*original->size ; i++){
-        new->gameBoard[i].value = original->gameBoard[i].value;
-        new->gameBoard[i].fixed = original->gameBoard[i].fixed;
-    }
-    for (i = 0; i < original->size; i++)
-    {
-        new->rowMask[i][0] = original->rowMask[i][0];
-        new->rowMask[i][1] = original->rowMask[i][1];
-        new->rowMask[i][2] = original->rowMask[i][2];
-
-        new->colMask[i][0] = original->colMask[i][0];
-        new->colMask[i][1] = original->colMask[i][1];
-        new->colMask[i][2] = original->colMask[i][2];
-
-        new->boxMask[i][0] = original->boxMask[i][0];
-        new->boxMask[i][1] = original->boxMask[i][1];
-        new->boxMask[i][2] = original->boxMask[i][2];
-    }
+    makeCopyBoard(new, original);
+    
     return new;
 }
 
@@ -301,14 +288,16 @@ int fillGameBoard(Board *board, char const* file)
     return 0;
 }
 
-
-
+/***********************************************************************************
+*       Compresses a game board in a vector that has pairs of position and value   *
+*                                                                                  *
+* Returns: size of the vector that will be send                                    *
+***********************************************************************************/
 
 int compressBoard(Board * b, int fixed, int index, char ** r){
     int current = 0, area = b->size*b->size;
 
     char * comp = malloc( (sizeof(int)+sizeof(char)) * area);
-
 
     for (int i = 0; i < area; ++i)
     {
@@ -328,6 +317,12 @@ int compressBoard(Board * b, int fixed, int index, char ** r){
 }
 
 
+/**********************************************************************************************
+*      Decompresses a game board according to a vector that has pairs of position and value   *
+*                                                                                             *
+* Returns: index on which a processor will start to work on its game board                    *
+**********************************************************************************************/
+
 int decompressBoard(Board * b, char * r, int s, int fixed){
     int current = 0, index = 0, i , area=b->size * b->size, m_index, value;
 
@@ -344,7 +339,6 @@ int decompressBoard(Board * b, char * r, int s, int fixed){
             b->gameBoard[i].fixed = FALSE;
         }
     }
-    
     
     while(current < s)
     {
@@ -385,65 +379,6 @@ void printBoard(Board *b)
             printf("\n");
         }
     }
-}
-
-void printBoardT(Board *b, int id)
-{
-
-    int i = 0;
-    printf("[%d]", id);
-    for(i = 0; i < b->size*b->size; i++)
-    {
-        printf("%d ", b->gameBoard[i].value);
-
-        if((i+1)%(b->size) == 0){
-
-            printf("\n[%d]", id);
-        }
-    }
-}
-
-void printMask(int n, int c){
-    int k = 0;
-    c--;
-    for (  ; c >= 0; c--)
-    {
-        if ((c+1)%4 == 0)
-        {
-            printf(" ");
-        }
-        k = n >> c;
-        if (k & 1)
-          printf("1");
-        else
-          printf("0");
-    } 
-} 
-
-
-void printBM(Board *b){
-    int i;
-
-    for (i = 0; i < b->size; ++i)
-    {
-        printMask(b->rowMask[i][0], b->size);
-        printf("\n");
-    }
-    printf("\n....\n");
-    for (i = 0; i < b->size; ++i)
-    {
-        printMask(b->colMask[i][0], b->size);
-        printf("\n");
-    }
-    printf("\n....\n");
-    for (i = 0; i < b->size; ++i)
-    {
-        printMask(b->boxMask[i][0], b->size );
-        printf("\n");
-    }
-
-    printf("\n....\n");
-    printBoard(b);
 }
 
 /*********************************************
