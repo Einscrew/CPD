@@ -1,7 +1,7 @@
 CC=mpicc
 FLAGS=-g -Wall -std=c99
 EXTRA=-fopenmp
-FILE=2x2.txt
+FILE=s9x9.txt
 P=2
 
 NAME=sudoku-mpi

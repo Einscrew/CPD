@@ -334,7 +334,7 @@ int decompressBoard(Board * b, char * r, int s, int fixed){
     if(fixed)
         emptyCells = area;
     else
-        emptyCells = 0;
+        emptyCells = originalEmptyCells;
 
     if(b->gameBoard == NULL){
         allocBoard(b);
@@ -355,7 +355,7 @@ int decompressBoard(Board * b, char * r, int s, int fixed){
         current += sizeof(char);
         b->gameBoard[index].fixed = fixed;
 
-        emptyCells = (fixed)?(emptyCells-1):(emptyCells+1);
+        emptyCells = emptyCells-1;
         
         //TODO: update masks <------------------------------
         m_index = value/32;

@@ -3,9 +3,10 @@
 #include <unistd.h>
 #include "sudoku-mpi.h"
 
-#define TRUE_FACTOR 1
+//#define TRUE_FACTOR 1
 //#define AREA_FACTOR 5
 //#define EC_FACTOR 5
+
 
 #define STATISTICS 1
 #define TIME 1
@@ -18,9 +19,13 @@
 #define ASK_WORK 444
 
 int brecv = 0;
+int limit = 0;
 
 int extern emptyCells;
 int extern originalEmptyCells;
+int extern ti;
+
+int minEC;
 
 Board * originalBoard = NULL;
 Board * finalBoard = NULL;
@@ -96,51 +101,38 @@ void sendSolution(int id, int p){
     }while(1);
 }
 
-/*printf("[%d] compressed sent %d @ index: %d\n", id, size, i);
-#ifdef OUT
-#endif
-#ifdef OUT
-printf(">[%d]", id );
-#endif
-for (long int j = 0; j < size; ++j){
-    #ifdef OUT
-    printf("%d", compressed[j]);
-    #endif
-    if((j+1)%5==0){
-        #ifdef OUT
-        printf("|");
-        #endif
-    }
-}
-#ifdef OUT
-printf("\n");
-#endif
-fflush(stdout);*/
 
 int giveWork(Board *b, int i, int id){
     int area = b->size*b->size;
     int sendFlag = FALSE, receiveFlag = FALSE, size;
     
-    #ifdef TRUE_FACTOR
-    int didSend = TRUE;
-    #endif
+    
+    int didSend = FALSE;    
 
     #ifdef EC_FACTOR
-    int didSend = (emptyCells > originalEmptyCells/EC_FACTOR) ? (TRUE):(FALSE);
+    didSend = (emptyCells > originalEmptyCells/EC_FACTOR) ? (TRUE):(FALSE);
     #endif
     
     #ifdef AREA_FACTOR
-    int didSend = (emptyCells > area/AREA_FACTOR) ? (TRUE):(FALSE);
+    didSend = (emptyCells > area/AREA_FACTOR) ? (TRUE):(FALSE);
     #endif
+
+    if(limit <= emptyCells){
+        didSend = TRUE;
+    }
+
 
     char * compressed  = NULL;
     MPI_Status s;
     if(work4neighbor){
 
         if(didSend){
+            
             size = compressBoard(b, 0, i, &compressed);
             MPI_Isend(compressed, size, MPI_BYTE, right, GET_WORK, MPI_COMM_WORLD, &boardReq);    
-        } 
+        }else{
+            printf("NOT Empty : %d\n", emptyCells);
+        }
 
         while(!sendFlag){
             if(didSend){
@@ -210,6 +202,8 @@ int giveWork(Board *b, int i, int id){
                         }
                     }
                 }
+                else
+                    printf("NOT Empty : %d\n", emptyCells);
             }
         
             MPI_Irecv(&msg, 1, MPI_INT, right, ASK_WORK, MPI_COMM_WORLD, &msgReq);
@@ -342,7 +336,6 @@ int GetOrCheckWork(Board * board, int id){
         #endif
         printBoardT(board, id);
         fflush(stdout);*/
-        
         startIndex = decompressBoard(board, compressed, size, FALSE);
         free(compressed);
         
@@ -463,8 +456,12 @@ int bruteForce(Board *b, int start, int id, int p, int askWork){
                     }
                     return FALSE;
                 }
-            }else
+            }else{
                 emptyCells--;
+                if(emptyCells < minEC){
+                    minEC = emptyCells;
+                }
+            }
         }
 
     }
@@ -518,49 +515,105 @@ void checkPossibilities(Board * b, int cindex, int index, int * possible, int id
     }
 }
 
-void initialWork(Board * b, int cindex, int index, int * possible, int id, int p){
-    int value = 1;
+void checkPossibilitiesL(Board * b, int cindex, int index, int * possibleFinal, int * possiblePrev, int id, int p){
+    int value = 0;
 
-    if(cindex > b->size*b->size-1)
+    if(cindex > b->size*b->size-1){
+        NoSolution = FALSE;
+
+        if(id == 0){
+             
+            printBoard(b);
+            fflush(stdout);
+        }
         return;
+    }
     if(b->gameBoard[cindex].fixed){
-        initialWork(b, cindex+1, index+1, possible, id, p);
+        checkPossibilitiesL(b, cindex+1, index+1, possibleFinal, possiblePrev, id, p);
     }
     else{
         for (value = 1; value <= b->size; value++)
         {
-            if (NoSolution == FALSE){
+            if(cindex == index-1 && *possiblePrev+*possibleFinal >= p){
                 return;
             }
             if(checkValidityMasks(b, cindex, value) == TRUE)
             {
-                if(cindex == index){
-                    if(*possible%p == id){
-                        
-                        #ifdef OUT
-                        printf("[%d]-Will process %d @ index: %d\n", id, *possible, cindex);
-                        #endif
-                        b->gameBoard[cindex].value = value;
-                     
-                        updateMasks(b, cindex);
-                        if(bruteForce(b, cindex+1, id, p, FALSE) == FALSE){
-                            removeMasks(b, cindex);
-                            b->gameBoard[cindex].value = 0;
-                        }
-                        if(NoSolution == FALSE)
-                            return;
-                    }
-                    *possible +=1;
+                if(cindex == index-1){
+                   *possiblePrev -=1;
                 }
-                else{
+                if(cindex == index){
+                    *possibleFinal +=1;
+                }
+                else{//(cindex != index){
                     b->gameBoard[cindex].value = value;
                     updateMasks(b, cindex);
-                    initialWork(b, cindex+1, index, possible, id, p);
-                    if(NoSolution == TRUE){
+                    checkPossibilitiesL(b, cindex+1, index, possibleFinal, possiblePrev, id, p);
+                    removeMasks(b, cindex);
+                    b->gameBoard[cindex].value = 0;
+                }
+
+            }
+        }
+        
+    }
+}
+
+
+void initialWork(Board * b, int cindex, int index, int * possibleFinal, int * possiblePrev, int id, int p, int *possible){
+    int value = 0;
+
+    if(cindex > b->size*b->size-1){
+        NoSolution = FALSE;
+
+        if(id == 0){
+             
+            printBoard(b);
+            fflush(stdout);
+        }
+        return;
+    }
+    if(b->gameBoard[cindex].fixed){
+        initialWork(b, cindex+1, index+1, possibleFinal, possiblePrev, id, p, possible);
+    }
+    else{
+        for (value = b->size; value >= 1; value--)
+        {
+            if(checkValidityMasks(b, cindex, value) == TRUE)
+            {  
+                if(cindex == index && *possibleFinal > 0){
+                    if(*possible%p == id){
+                        b->gameBoard[cindex].value = value;
+                        updateMasks(b, cindex);
+                        
+                        bruteForce(b, cindex+1, id, p, FALSE);
+                        *possibleFinal-=1;
                         removeMasks(b, cindex);
                         b->gameBoard[cindex].value = 0;
                     }
+                    *possible +=1;
+                }else if(cindex == index-1 && *possiblePrev > 0){
+                    if(*possible%p == id){
+                        b->gameBoard[cindex].value = value;
+                        updateMasks(b, cindex);
+                        
+                        bruteForce(b, cindex+1, id, p, FALSE);
+                        *possiblePrev-=1;
+                        removeMasks(b, cindex);
+                        b->gameBoard[cindex].value = 0;
+                    }
+                    *possible +=1;
                 }
+                else{//(cindex != index){
+                    b->gameBoard[cindex].value = value;
+                    updateMasks(b, cindex);
+                    initialWork(b, cindex+1, index, possibleFinal, possiblePrev, id, p, possible);
+                    removeMasks(b, cindex);
+                    b->gameBoard[cindex].value = 0;
+                }
+
+                
+
             }
         }
         
@@ -572,41 +625,67 @@ int check(int id, int p){
 
     int idcpy = id, index = 0;
     int possible = 0;
-    int maxP = (p>200)?200:p;   
+    int possibleFinal = 0, possiblePrev = 0;
+
 
     left = (id==0)?p-1:id-1;
     right = (id+1)%p;
 
     Board * board = copyBoard(originalBoard);
+    
+    minEC = originalEmptyCells;
+
+    switch(board->size){
+        case 4:
+            limit = originalEmptyCells+1;
+            break;
+        case 9:
+            limit = 9;
+            break;
+        case 16:
+            limit = 7;
+            break;
+        case 25:
+            limit = 6;
+            break;
+        case 36:
+            limit = 5;
+            break;
+        default:
+            limit = 3;
+    }
 
     TERM = p+1;
 
-    while( maxP > possible){
-        possible = 0;
-        checkPossibilities(board, 0, index, &possible, id);
+
+    checkPossibilities(board, 0, 0, &possibleFinal, id);
+    index++;
+    if(!id) printf("[%d]-trying: %d - Final: %d   Prev %d   P: %d\n", id, index, possiblePrev, possibleFinal,  possibleFinal+possiblePrev);
+    while(p > possibleFinal+possiblePrev){
+
+        possiblePrev = possibleFinal;
+        possibleFinal = 0;
+        checkPossibilitiesL(board, 0, index, &possibleFinal, &possiblePrev, id, p);
+       
         if(NoSolution == FALSE){
             return 0;
         }
-        #ifdef OUT 
-        printf("[%d]-trying: %d - p: %d\n",id, index, possible);
-        #endif
+        //#ifdef OUT 
+        if(!id)  printf("[%d]-trying: %d - Final: %d   Prev %d   P: %d\n", id, index, possibleFinal ,possiblePrev,  possibleFinal+possiblePrev);
+        fflush(stdout);
+        //#endif
         index++;
     }
+
     index--;
 
-    if(!id) printf("possibilities: >>>%d<<<\t index: >>>%d<<<\n", possible, index);
-
-    //t += MPI_Wtime();
+    // printf("possibilities: >>>%d<<<\t index: >>>%d<<<\n", possible, index);
 
     MPI_Irecv(&msg, 1, MPI_INT, right, ASK_WORK, MPI_COMM_WORLD, &msgReq);
     
-    if(id < 200){ // Test your own possibilities
-        possible = 0;
-        initialWork(board, 0, index, &possible, id, p);
-        printf("[%d]- Exit initialWork\n",id);
-        #ifdef OUT
-        #endif
-    }
+    initialWork(board, 0, index, &possibleFinal, &possiblePrev, id, p, &possible);
+    
+    printf("[%d]- Exit initialWork\n",id);    
 
     if(NoSolution == TRUE){
         
@@ -666,16 +745,6 @@ int main(int argc, char *argv[]) {
                 s = compressBoard(board, 1, board->size*board->size-1 , &r);
                 memcpy(first, &board->squareSize, sizeof(char));
                 memcpy(&first[sizeof(char)], &s, sizeof(int));
-                /*halfbruteForce(board);
-                free(r);
-
-                s = compressBoard(board, 0, board->size*board->size/2, &r );
-
-                decompressBoard(board, r, s);
-                printBoard(board);
-                free(r);
-                freeBoard(board);
-                free(board);*/
             }
         }
         else
@@ -711,42 +780,9 @@ int main(int argc, char *argv[]) {
     MPI_Bcast(r, s, MPI_BYTE, 0, MPI_COMM_WORLD);
 
     if(id){
-
-        /*
-        #ifdef OUT
-        printf(">%d|",r[0]);
-        #endif
-        for (long int i = 1; i < s; ++i){
-            #ifdef OUT
-            printf("%d", r[i]);
-            #endif
-            if((i)%5==0){
-                #ifdef OUT
-                printf("|");
-                #endif
-            }
-        }
-        #ifdef OUT
-        printf("\n");
-        #endif
-        fflush(stdout);
-        
-        */
         
         decompressBoard(board, r, s, TRUE);
         originalEmptyCells = emptyCells;
-        #ifdef OUT
-        //printf("%d\n", board->squareSize);
-        #endif
-        #ifdef OUT
-        //printf("Does process %d work? %c\n",id, (check(board))?'Y':'N' );
-        #endif
-        /*if(id==1){
-            #ifdef OUT
-            printf("TIME:::%lf\n", t);
-            #endif
-            printBoard(board);\
-        }*/
     }
     free(r); //<--------------------------------------------------------------------------
     
@@ -757,7 +793,7 @@ int main(int argc, char *argv[]) {
     t += MPI_Wtime();
 
     #ifdef STATISTICS
-    printf("[%d] Boards received:%d\n", id, brecv );
+    printf("[%d] Boards received:%d Min emptyCells:%d\n", id, brecv, minEC );
     #endif
 
     freeBoard(board);

@@ -12,6 +12,9 @@
 #define TRUE 1
 #define FALSE 0
 
+
+#define BOARD_FACTOR 1000000
+
 /* Used to convert matrix indexes to unidimensional arrays */
 #define no(x,y,l) (y*l+x)
 #define row(n,l) (n/l)

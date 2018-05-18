@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include "sudoku-mpi.h"
 
+int NoSolution = TRUE;
 /*******************************************************
 *    Makes a guess in a game board at a given index    *
 *                                        			   *
@@ -35,7 +36,8 @@ int makeGuess(Board *b, int i)
 *    Brute force algorithm that receives a board and finds a solution if there's one    *            										   	    *
 *****************************************************************************************/
 
-void bruteForce(Board *b){
+//void bruteForce(Board *b){
+int bruteForce(Board *b, int start, int id, int p, int askWork){
 
 	int i = 0, valid = TRUE;
 
@@ -71,7 +73,7 @@ void bruteForce(Board *b){
 				if(i < 0)
                 {
 					printf("No solution\n");
-					return;
+					return 1;
 				}
 			}
 		}
@@ -79,94 +81,204 @@ void bruteForce(Board *b){
 
 	/* If the solution is find, print it */
 	printBoard(b);
+    return 0;
 }
+
+void checkPossibilities(Board * b, int cindex, int index, int * possible, int id){
+    int value = 0;
+    if(cindex > b->size*b->size-1){
+        NoSolution = FALSE;
+
+        if(id == 0){
+            printBoard(b);
+            fflush(stdout);
+        }
+        return;
+    }
+    if(b->gameBoard[cindex].fixed){
+        checkPossibilities(b, cindex+1, index+1, possible, id);
+    }
+    else{
+        for (value = 1; value <= b->size; value++)
+        {
+        
+            if(checkValidityMasks(b, cindex, value) == TRUE)
+            {
+                if(cindex == index){
+                    *possible +=1;
+                }
+                else{
+                    b->gameBoard[cindex].value = value;
+                    updateMasks(b, cindex);
+                    checkPossibilities(b, cindex+1, index, possible, id);
+                    removeMasks(b, cindex);
+                    b->gameBoard[cindex].value = 0;
+                }
+
+            }
+        }
+        
+    }
+}
+
+void checkPossibilitiesL(Board * b, int cindex, int index, int * possibleFinal, int * possiblePrev, int id, int p){
+    int value = 0;
+
+    if(cindex > b->size*b->size-1){
+        NoSolution = FALSE;
+
+        if(id == 0){
+             
+            printBoard(b);
+            fflush(stdout);
+        }
+        return;
+    }
+    if(b->gameBoard[cindex].fixed){
+        checkPossibilitiesL(b, cindex+1, index+1, possibleFinal, possiblePrev, id, p);
+    }
+    else{
+        for (value = 1; value <= b->size; value++)
+        {
+            if(cindex == index-1 && *possiblePrev+*possibleFinal >= p){
+                return;
+            }
+            if(checkValidityMasks(b, cindex, value) == TRUE)
+            {
+                if(cindex == index-1){
+                   *possiblePrev -=1;
+                }
+                if(cindex == index){
+                    *possibleFinal +=1;
+                }
+                else{//(cindex != index){
+                    b->gameBoard[cindex].value = value;
+                    updateMasks(b, cindex);
+                    checkPossibilitiesL(b, cindex+1, index, possibleFinal, possiblePrev, id, p);
+                    removeMasks(b, cindex);
+                    b->gameBoard[cindex].value = 0;
+                }
+
+            }
+        }
+        
+    }
+}
+
+
+void giveWork(Board * b, int cindex, int index, int * possibleFinal, int * possiblePrev, int id, int p, int *possible){
+    int value = 0;
+
+    if(cindex > b->size*b->size-1){
+        NoSolution = FALSE;
+
+        if(id == 0){
+             
+            printBoard(b);
+            fflush(stdout);
+        }
+        return;
+    }
+    if(b->gameBoard[cindex].fixed){
+        giveWork(b, cindex+1, index+1, possibleFinal, possiblePrev, id, p, possible);
+    }
+    else{
+        for (value = b->size; value >= 1; value--)
+        {
+            if(checkValidityMasks(b, cindex, value) == TRUE)
+            {  
+                if(cindex == index && *possibleFinal > 0){
+                    if(*possible%p == id){
+                        b->gameBoard[cindex].value = value;
+                        updateMasks(b, cindex);
+                        printf("[%d]------------------------\n", id);
+                        printBoard(b);
+                        *possibleFinal-=1;
+                        removeMasks(b, cindex);
+                        b->gameBoard[cindex].value = 0;
+                    }
+                    *possible +=1;
+                }else if(cindex == index-1 && *possiblePrev > 0){
+                    if(*possible%p == id){
+                        b->gameBoard[cindex].value = value;
+                        updateMasks(b, cindex);
+                        printf("[%d]------------------------\n", id);
+                        printBoard(b);
+                        *possiblePrev-=1;
+                        removeMasks(b, cindex);
+                        b->gameBoard[cindex].value = 0;
+                    }
+                    *possible +=1;
+                }
+                else{//(cindex != index){
+                    b->gameBoard[cindex].value = value;
+                    updateMasks(b, cindex);
+                    giveWork(b, cindex+1, index, possibleFinal, possiblePrev, id, p, possible);
+                    removeMasks(b, cindex);
+                    b->gameBoard[cindex].value = 0;
+                }
+
+                
+
+            }
+        }
+        
+    }
+}
+
 
 /****************************************************************************
 *    Allocs a board, fills that board and find a solution if there's one    *
 *                                        			   						*
 * Returns: 0 at exit     		   											*        								    
 ****************************************************************************/
-
+/*
+mpicc -c sudoku-serial.c board.h -g -Wall -std=c99
+mpicc -o sudoku-serial sudoku-serial.o board.o -g -Wall -std=c99
+*/
 int main(int argc, char *argv[]) {
 
-    Board *board = (Board*)malloc(sizeof(Board));;
+    Board *board = (Board*)malloc(sizeof(Board));
     char * r;
     char * final;
-    long int s= 5*(81*81+1);
+    double t = 0;
     /* Checks if teh user gives the input file */
-    MPI_Status status;
-    int id, p;
-                
-    // MPI_INIT & MPI_COMM
-    MPI_Init (&argc, &argv);
-    
-    MPI_Comm_rank (MPI_COMM_WORLD, &id);
-    MPI_Comm_size (MPI_COMM_WORLD, &p);
+    int i, id=3, p=8, possibleFinal = 0, possiblePrev = 0, index = 0, possible = 0;
 
-    if(!id){
-        if(argv[1] != NULL)
-        {
 
-            if((fillGameBoard(board, argv[1])) == 0)
-            {
-                r = NULL;
-                int ts = compressBoard(board, 1, -1, &r);
+    if((fillGameBoard(board, argv[1])) == 0)
+    {
+        checkPossibilities(board, 0, 0, &possibleFinal, id);
+        index++;
+        printf("[%d]-trying: %d - Final: %d   Prev %d   P: %d\n", id, index, possiblePrev, possibleFinal,  possibleFinal+possiblePrev);
+        while(p > possibleFinal+possiblePrev){
 
-                /*
-                printf(">%d|%d%d%d%d|",r[0], r[1] , r[2], r[3], r[4]);
-                for (long int i = 5; i < ts; ++i)                {
-                    printf("%d", r[i]);
-                    if((i+1)%5==0){
-                        printf("|");
-                    }
-                }
-                printf("\n");
-                decompressBoard(board, r);
-                printBoard(board);
-                printf("\n...................................................\n");
-                bruteforce();
-                compressBoard(board, 1, 1, &final);
-                */
-                //VVVVVVV
-                freeBoard(board);
-
-            }       
-
-            /* Frees memory allocated */
-            free(board);
-
+            possiblePrev = possibleFinal;
+            possibleFinal = 0;
+            checkPossibilitiesL(board, 0, index, &possibleFinal, &possiblePrev, id, p);
+           
+            if(NoSolution == FALSE){
+                return 0;
+            }
+            //#ifdef OUT 
+            printf("[%d]-trying: %d - Final: %d   Prev %d   P: %d\n", id, index, possibleFinal ,possiblePrev,  possibleFinal+possiblePrev);
+            fflush(stdout);
+            //#endif
+            index++;
         }
-        else
-        {
-            /* If theres's no input file given by the user */
-            printf("No file was specified!\n");
 
-        }
-    }
-    else
-        r = malloc((sizeof(int)+sizeof(char))*(81*81+1));
+        index--;
 
-    
-    MPI_Barrier(MPI_COMM_WORLD);
-
-//  printf("s %d\n", s);
-    MPI_Bcast(r, s+1, MPI_BYTE, 0, MPI_COMM_WORLD);
-
-
-    if(id==1){
-        decompressBoard(board, r);
-        printf("%d\n", board->squareSize);
-        printBoard(board);
+        giveWork(board, 0, index, &possibleFinal, &possiblePrev, id, p, &possible);
+        
         freeBoard(board);
-        free(board);
     }
+    else{
+        printf("No file was specified!\n");
+    }
+    free(board);
 
-    free(r);
 
-    //MPI_Recv
-
-    MPI_Finalize();
-    
     return 0;
 }
 
