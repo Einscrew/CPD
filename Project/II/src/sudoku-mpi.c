@@ -3,11 +3,6 @@
 #include <unistd.h>
 #include "sudoku-mpi.h"
 
-//#define TRUE_FACTOR 1
-//#define AREA_FACTOR 5
-//#define EC_FACTOR 5
-
-
 #define STATISTICS 1
 #define TIME 1
 
@@ -23,7 +18,7 @@ int limit = 0;
 
 int extern emptyCells;
 int extern originalEmptyCells;
-int extern ti;
+
 
 int minEC;
 
@@ -109,18 +104,9 @@ int giveWork(Board *b, int i, int id){
     
     int didSend = FALSE;    
 
-    #ifdef EC_FACTOR
-    didSend = (emptyCells > originalEmptyCells/EC_FACTOR) ? (TRUE):(FALSE);
-    #endif
-    
-    #ifdef AREA_FACTOR
-    didSend = (emptyCells > area/AREA_FACTOR) ? (TRUE):(FALSE);
-    #endif
-
     if(limit <= emptyCells){
         didSend = TRUE;
     }
-
 
     char * compressed  = NULL;
     MPI_Status s;
@@ -563,60 +549,76 @@ void checkPossibilitiesL(Board * b, int cindex, int index, int * possibleFinal, 
 void initialWork(Board * b, int cindex, int index, int * possibleFinal, int * possiblePrev, int id, int p, int *possible){
     int value = 0;
 
-    if(cindex > b->size*b->size-1){
-        NoSolution = FALSE;
-
-        if(id == 0){
-             
-            printBoard(b);
-            fflush(stdout);
-        }
-        return;
-    }
     if(b->gameBoard[cindex].fixed){
         initialWork(b, cindex+1, index+1, possibleFinal, possiblePrev, id, p, possible);
     }
     else{
         for (value = b->size; value >= 1; value--)
         {
+            /* If there's a solution, exit the program */
+            if (NoSolution == FALSE){
+                return;
+            }
             if(checkValidityMasks(b, cindex, value) == TRUE)
             {  
+                /* If the index on which there are possibilities for all the processors start working, then each possinility is
+                assigned according to the id of the processor */
                 if(cindex == index && *possibleFinal > 0){
+
                     if(*possible%p == id){
                         b->gameBoard[cindex].value = value;
                         updateMasks(b, cindex);
                         
-                        bruteForce(b, cindex+1, id, p, FALSE);
+                        /* Execute the brute force algorithm to find a solution */
+                        if(bruteForce(b, cindex+1, id, p, FALSE) == FALSE){
+                            removeMasks(b, cindex);
+                            b->gameBoard[cindex].value = 0;
+                        }
+                        /* Descrement the number of possibilities at the current index */
                         *possibleFinal-=1;
-                        removeMasks(b, cindex);
-                        b->gameBoard[cindex].value = 0;
+
+                        /* If a solution was found during the bruteforce function, can exit the program */
+                        if(NoSolution == FALSE)
+                            return;
                     }
+
+                    /* Increment the number of possibilities */
                     *possible +=1;
                 }else if(cindex == index-1 && *possiblePrev > 0){
                     if(*possible%p == id){
                         b->gameBoard[cindex].value = value;
                         updateMasks(b, cindex);
                         
-                        bruteForce(b, cindex+1, id, p, FALSE);
+                        /* Execute the brute force algorithm to find a solution */
+                        if(bruteForce(b, cindex+1, id, p, FALSE) == FALSE){
+                            removeMasks(b, cindex);
+                            b->gameBoard[cindex].value = 0;
+                        }
+
+                        /* Descrement the number of possibilities at the current index */
                         *possiblePrev-=1;
-                        removeMasks(b, cindex);
-                        b->gameBoard[cindex].value = 0;
+
+                        /* If a solution was found during the bruteforce function, can exit the program */
+                        if(NoSolution == FALSE)
+                            return;
                     }
+
+                    /* Increment the number of possibilities */
                     *possible +=1;
                 }
-                else{//(cindex != index){
+                else{
                     b->gameBoard[cindex].value = value;
                     updateMasks(b, cindex);
                     initialWork(b, cindex+1, index, possibleFinal, possiblePrev, id, p, possible);
-                    removeMasks(b, cindex);
-                    b->gameBoard[cindex].value = 0;
+
+                    /* If no solution was found with that possibility resets the value of the start index */
+                    if(NoSolution == TRUE){
+                        removeMasks(b, cindex);
+                        b->gameBoard[cindex].value = 0;
+                    }
                 }
-
-                
-
             }
         }
-        
     }
 }
 
@@ -656,7 +658,6 @@ int check(int id, int p){
     }
 
     TERM = p+1;
-
 
     checkPossibilities(board, 0, 0, &possibleFinal, id);
     index++;
