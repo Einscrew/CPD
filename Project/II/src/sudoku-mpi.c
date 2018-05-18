@@ -3,7 +3,7 @@
 #include <unistd.h>
 #include "sudoku-mpi.h"
 
-//#define TIME 1
+#define TIME 1
 
 #define WORK 10
 #define IDLE -10
